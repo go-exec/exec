@@ -42,27 +42,39 @@ func main() {
 	exec.Set("localUser", exec.Local("git config --get user.name"))
 
 	exec.
-		Server("prod1", "root@localhost").
+		Server("prod1", "root@domain.com").
 		AddRole("prod").
 		Set("bin/mysql", "mysql prod")
 
 	exec.
-		Server("prod2", "root@localhost").
+		Server("prod2", "root@domain.com").
 		AddRole("prod").
 		Set("bin/mysql", "mysql prod")
 
 	exec.
-		Server("qa", "root@localhost").
+		Server("qa", "root@domain.com").
 		Key("~/.ssh/id_rsa").
 		AddRole("qa").
 		Set("bin/mysql", "mysql qa")
 
 	exec.
-		Server("stage", "root@localhost").
+		Server("stage", "root@domain.com").
 		AddRole("stage")
 
 	opt1 := exec.NewOption("opt1", "test")
 	opt2 := exec.NewOption("opt2", "test")
+
+	exec.
+		Task("upload", func() {
+			exec.Remote("ls -la /")
+			exec.Upload("test.txt", "~/test.txt")
+		})
+
+	exec.
+		Task("download", func() {
+			exec.Remote("ls -la /")
+			exec.Download("~/test.txt", "test.txt")
+		})
 
 	exec.
 		Task("test1", func() {

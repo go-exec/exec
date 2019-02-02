@@ -4,6 +4,7 @@ type server struct {
 	Name    string
 	Host    string
 	Configs map[string]*config
+	key     *string
 
 	roles     []string
 	sshClient *sshClient
@@ -29,6 +30,7 @@ func (s *server) Set(name string, value interface{}) *server {
 }
 
 func (s *server) Key(file string) *server {
+	s.key = &file
 	s.sshClient.keys = append(s.sshClient.keys, file)
 	return s
 }

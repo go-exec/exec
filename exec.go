@@ -290,6 +290,42 @@ func Remotes(command string) {
 	}
 }
 
+// Upload uploads a file from local to remote, using native scp binary
+func Upload(local, remote string) {
+	run, onServer := shouldIRun()
+
+	if run && Servers[onServer] != nil {
+		var args = []string{"scp"}
+		if Servers[onServer].key != nil {
+			args = append(args, "-i "+*Servers[onServer].key)
+		}
+		args = append(args, local, Servers[onServer].Host+":"+remote)
+
+		Local(strings.Join(args, " "))
+	} else {
+		fmt.Printf("%s%s%s\n", color.CyanString("[%s] %s Uploading `", getOnServerForPrint(onServer), ">"), color.WhiteString(local), color.CyanString("` not allowed to run"))
+		color.Cyan("Reasons: onServer AND/OR onlyOnServers is not met")
+	}
+}
+
+// Download downloads a file from remote to local, using native scp binary
+func Download(remote, local string) {
+	run, onServer := shouldIRun()
+
+	if run && Servers[onServer] != nil {
+		var args = []string{"scp"}
+		if Servers[onServer].key != nil {
+			args = append(args, "-i "+*Servers[onServer].key)
+		}
+		args = append(args, Servers[onServer].Host+":"+remote, local)
+
+		Local(strings.Join(args, " "))
+	} else {
+		fmt.Printf("%s%s%s\n", color.CyanString("[%s] %s Uploading `", getOnServerForPrint(onServer), ">"), color.WhiteString(local), color.CyanString("` not allowed to run"))
+		color.Cyan("Reasons: onServer AND/OR onlyOnServers is not met")
+	}
+}
+
 func shouldIRun() (run bool, onServer string) {
 	//default values if server context is set
 	if s := serverContextF(); s != "" {
