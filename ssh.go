@@ -216,16 +216,16 @@ func (c *sshClient) Wait() error {
 }
 
 // DialThrough will create a new connection from the ssh server sc is connected to. DialThrough is an SSHDialer.
-func (sc *sshClient) DialThrough(net, addr string, config *ssh.ClientConfig) (*ssh.Client, error) {
-	conn, err := sc.conn.Dial(net, addr)
+func (c *sshClient) DialThrough(net, addr string, config *ssh.ClientConfig) (*ssh.Client, error) {
+	conn, err := c.conn.Dial(net, addr)
 	if err != nil {
 		return nil, err
 	}
-	c, chans, reqs, err := ssh.NewClientConn(conn, addr, config)
+	sc, chans, reqs, err := ssh.NewClientConn(conn, addr, config)
 	if err != nil {
 		return nil, err
 	}
-	return ssh.NewClient(c, chans, reqs), nil
+	return ssh.NewClient(sc, chans, reqs), nil
 
 }
 

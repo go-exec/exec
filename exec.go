@@ -10,16 +10,25 @@ import (
 )
 
 var (
-	Configs          = make(map[string]*config)
-	Tasks            = make(map[string]*task)
-	Servers          = make(map[string]*server)
-	TaskGroups       = make(map[string]*taskGroup)
-	Arguments        = make(map[string]*Argument)
-	Options          = make(map[string]*Option)
-	ServerContext    *server
+	// Configs contains all exec context vars used by Get and Set
+	Configs = make(map[string]*config)
+	// Tasks contains all exec tasks
+	Tasks = make(map[string]*task)
+	// Servers contains all exec servers
+	Servers = make(map[string]*server)
+	// TaskGroups contains all exec task groups
+	TaskGroups = make(map[string]*taskGroup)
+	// Arguments contains all exec arguments
+	Arguments = make(map[string]*Argument)
+	// Options contains all exec options
+	Options = make(map[string]*Option)
+	// ServerContext is the current active server
+	ServerContext *server
+	// TaskContext is the current executed task
+	TaskContext *task
+
 	serverContextF   = func() string { return "" } //must return one server name
-	TaskContext      *task
-	argumentSequence int = 0
+	argumentSequence int
 )
 
 // Init initializes the exec and executes the current command
@@ -89,17 +98,18 @@ func NewArgument(name string, description string) *Argument {
 func AddArgument(argument *Argument) {
 	if _, ok := Arguments[argument.Name]; !ok {
 		argument.sequence = argumentSequence
-		argumentSequence += 1
+		argumentSequence++
 		Arguments[argument.Name] = argument
 	}
 }
 
+// GetArgument return an Argument pointer
 func GetArgument(name string) *Argument {
 	if arg, ok := Arguments[name]; ok {
 		return arg
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 // NewOption returns a new Option
@@ -257,10 +267,10 @@ func Remote(command string, args ...string) (o output) {
 
 	if run && Servers[onServer] != nil {
 		return RemoteRun(fmt.Sprintf(command, args), Servers[onServer])
-	} else {
-		notAllowedForPrint(onServer, fmt.Sprintf(command, args))
-		return o
 	}
+
+	notAllowedForPrint(onServer, fmt.Sprintf(command, args))
+	return o
 }
 
 // Remotes runs a command on servers with a specific role or name key
@@ -347,9 +357,9 @@ func shouldIRun() (run bool, onServer string) {
 func getOnServerForPrint(onServer string) string {
 	if onServer != "" {
 		return onServer
-	} else {
-		return "?"
 	}
+
+	return "?"
 }
 
 func notAllowedForPrint(onServer, command string) {

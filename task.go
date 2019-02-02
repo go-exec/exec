@@ -59,17 +59,15 @@ func (t *task) HasOption(name string) bool {
 func (t *task) GetArgument(name string) (arg *Argument) {
 	if t.HasArgument(name) {
 		return t.Arguments[name]
-	} else {
-		return arg
 	}
+	return arg
 }
 
 func (t *task) GetOption(name string) (opt *Option) {
 	if t.HasOption(name) {
 		return t.Options[name]
-	} else {
-		return opt
 	}
+	return opt
 }
 
 func (t *task) Once() *task {

@@ -19,7 +19,7 @@ func Cd(path string) {
 	ServerContext.sshClient.env = command + "; "
 }
 
-// CommandExists checks if a remote command exists on server
+// CommandExist checks if a remote command exists on server
 func CommandExist(command string) bool {
 	return Remote("if hash %s 2>/dev/null; then echo 'true'; fi", command).Bool()
 }
@@ -34,9 +34,8 @@ func Parse(text string) string {
 		name := strings.TrimRight(strings.TrimLeft(str, "{{"), "}}")
 		if Has(name) {
 			return Parse(Get(name).String())
-		} else {
-			return str
 		}
+		return str
 	})
 }
 

@@ -7,8 +7,11 @@ import (
 type valType int
 
 const (
+	// String value type
 	String valType = iota
+	// Bool value type
 	Bool
+	// Int value type
 	Int
 )
 
