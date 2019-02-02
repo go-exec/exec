@@ -195,8 +195,8 @@ func TaskGroup(name string, tasks ...string) *taskGroup {
 }
 
 // Local runs a local command and displays/returns the output for further usage, for example in a Task func
-func Local(command string, args ...string) (o output) {
-	command = Parse(fmt.Sprintf(command, args))
+func Local(command string, args ...interface{}) (o output) {
+	command = Parse(fmt.Sprintf(command, args...))
 
 	color.Green("[%s] %s %s", "local", ">", color.WhiteString(command))
 
@@ -262,27 +262,27 @@ func RemoteRun(command string, server *server) (o output) {
 }
 
 // Remote runs a command on one server
-func Remote(command string, args ...string) (o output) {
+func Remote(command string, args ...interface{}) (o output) {
 	run, onServer := shouldIRun()
 
 	if run && Servers[onServer] != nil {
-		return RemoteRun(fmt.Sprintf(command, args), Servers[onServer])
+		return RemoteRun(fmt.Sprintf(command, args...), Servers[onServer])
 	}
 
-	notAllowedForPrint(onServer, fmt.Sprintf(command, args))
+	notAllowedForPrint(onServer, fmt.Sprintf(command, args...))
 	return o
 }
 
 // Remotes runs a command on servers with a specific role or name key
-func Remotes(command string, args ...string) {
+func Remotes(command string, args ...interface{}) {
 	run, onServer := shouldIRun()
 
 	for name, server := range Servers {
 		if server.HasRole(onServer) || name == onServer {
 			if run {
-				go RemoteRun(fmt.Sprintf(command, args), server)
+				go RemoteRun(fmt.Sprintf(command, args...), server)
 			} else {
-				notAllowedForPrint(onServer, fmt.Sprintf(command, args))
+				notAllowedForPrint(onServer, fmt.Sprintf(command, args...))
 			}
 		}
 	}

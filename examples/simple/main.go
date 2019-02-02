@@ -39,7 +39,7 @@ func main() {
 		return "date"
 	}})
 
-	exec.Set("localUser", exec.Local("git config --get user.name"))
+	exec.Set("localUser", exec.Local("git config --get %s", "user.name"))
 
 	exec.
 		Server("prod1", "root@domain.com").
