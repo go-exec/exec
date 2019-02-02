@@ -185,8 +185,8 @@ func TaskGroup(name string, tasks ...string) *taskGroup {
 }
 
 // Local runs a local command and displays/returns the output for further usage, for example in a Task func
-func Local(command string) (o output) {
-	command = Parse(command)
+func Local(command string, args ...string) (o output) {
+	command = Parse(fmt.Sprintf(command, args))
 
 	color.Green("[%s] %s %s", "local", ">", color.WhiteString(command))
 
@@ -205,18 +205,6 @@ func Local(command string) (o output) {
 // Println parses a text template, if founds a {{ var }}, it automatically runs the Get(var) on it
 func Println(text string) {
 	fmt.Println(Parse(text))
-}
-
-// Cd is a remote helper function that runs a `cd` before a command
-func Cd(path string) {
-	command := "cd " + Parse(path)
-	color.Green("[%s] %s %s", ServerContext.Name, color.GreenString(">"), command)
-	ServerContext.sshClient.env = command + "; "
-}
-
-// CommandExists is a remote helper function that checks if a command exists on server
-func CommandExist(command string) bool {
-	return Remote(fmt.Sprintf("if hash %s 2>/dev/null; then echo 'true'; fi", command)).Bool()
 }
 
 // OnServer sets the server context dynamically
@@ -264,27 +252,27 @@ func RemoteRun(command string, server *server) (o output) {
 }
 
 // Remote runs a command on one server
-func Remote(command string) (o output) {
+func Remote(command string, args ...string) (o output) {
 	run, onServer := shouldIRun()
 
 	if run && Servers[onServer] != nil {
-		return RemoteRun(command, Servers[onServer])
+		return RemoteRun(fmt.Sprintf(command, args), Servers[onServer])
 	} else {
-		notAllowedForPrint(onServer, command)
+		notAllowedForPrint(onServer, fmt.Sprintf(command, args))
 		return o
 	}
 }
 
 // Remotes runs a command on servers with a specific role or name key
-func Remotes(command string) {
+func Remotes(command string, args ...string) {
 	run, onServer := shouldIRun()
 
 	for name, server := range Servers {
 		if server.HasRole(onServer) || name == onServer {
 			if run {
-				go RemoteRun(command, server)
+				go RemoteRun(fmt.Sprintf(command, args), server)
 			} else {
-				notAllowedForPrint(onServer, command)
+				notAllowedForPrint(onServer, fmt.Sprintf(command, args))
 			}
 		}
 	}

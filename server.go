@@ -1,5 +1,7 @@
 package exec
 
+import "strings"
+
 type server struct {
 	Name    string
 	Host    string
@@ -33,4 +35,8 @@ func (s *server) Key(file string) *server {
 	s.key = &file
 	s.sshClient.keys = append(s.sshClient.keys, file)
 	return s
+}
+
+func (s *server) GetUser() string {
+	return s.Host[:strings.Index(s.Host, "@")-1]
 }
