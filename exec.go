@@ -128,6 +128,15 @@ func AddOption(option *Option) {
 	}
 }
 
+// GetOption return an Option pointer
+func GetOption(name string) *Option {
+	if opt, ok := Options[name]; ok {
+		return opt
+	}
+
+	return nil
+}
+
 // Set sets a exec Config
 func Set(name string, value interface{}) {
 	Configs[name] = &config{Name: name, value: value}
