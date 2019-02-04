@@ -339,38 +339,34 @@ func Remote(command string, args ...interface{}) (o output) {
 func Upload(local, remote string) {
 	run, onServers := shouldIRun()
 
-	for _, onServer := range onServers {
-		if run && Servers[onServer] != nil {
-			var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
-			if Servers[onServer].key != nil {
-				args = append(args, "-i "+*Servers[onServer].key)
-			}
-			args = append(args, local, Servers[onServer].Dsn+":"+remote)
-
-			Local(strings.Join(args, " "))
-		} else {
-			commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (local)%s > (remote)%s", local, remote))
-		}
+	if !run {
+		commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (local)%s > (remote)%s", local, remote))
 	}
+
+	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
+	if ServerContext.key != nil {
+		args = append(args, "-i "+*ServerContext.key)
+	}
+	args = append(args, local, ServerContext.Dsn+":"+remote)
+
+	Local(strings.Join(args, " "))
 }
 
 // Download downloads a file from remote to local, using native scp binary
 func Download(remote, local string) {
 	run, onServers := shouldIRun()
 
-	for _, onServer := range onServers {
-		if run && Servers[onServer] != nil {
-			var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
-			if Servers[onServer].key != nil {
-				args = append(args, "-i "+*Servers[onServer].key)
-			}
-			args = append(args, Servers[onServer].Dsn+":"+remote, local)
-
-			Local(strings.Join(args, " "))
-		} else {
-			commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
-		}
+	if !run {
+		commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
 	}
+
+	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
+	if ServerContext.key != nil {
+		args = append(args, "-i "+*ServerContext.key)
+	}
+	args = append(args, ServerContext.Dsn+":"+remote, local)
+
+	Local(strings.Join(args, " "))
 }
 
 // Before sets tasks to run before task
