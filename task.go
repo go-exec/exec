@@ -196,18 +196,15 @@ func (t *task) execute(taskName string, cmdArgs []string) error {
 
 	if len(t.before) > 0 {
 		for _, tb := range t.before {
-			TaskContext = tb
 			tb.run()
 		}
 	}
 
 	// Runs the task's func
-	TaskContext = t
 	t.run()
 
 	if len(t.after) > 0 {
 		for _, ta := range t.after {
-			TaskContext = ta
 			ta.run()
 		}
 	}

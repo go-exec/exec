@@ -105,6 +105,7 @@ func main() {
 		Task("local", func() {
 			exec.Local("ls -la ~/Public; ls -la /Users/")
 		}).
+		Once().
 		ShortDescription("Running local task")
 
 	exec.
@@ -174,6 +175,7 @@ func main() {
 	exec.Before("get3", "test3")
 	exec.Before("get3", "local")
 	exec.After("local", "onservers:a")
+	exec.After("local", "get3")
 	exec.After("onservers:a", "local")
 
 	exec.Init()

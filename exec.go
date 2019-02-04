@@ -187,10 +187,14 @@ func Task(name string, f func()) *task {
 		Arguments:      make(map[string]*Argument),
 		Options:        make(map[string]*Option),
 		serverContextF: func() []string { return []string{} },
-		run: func() {
-			color.White("➤ Executing task %s", color.YellowString(name))
-			f()
-		}}
+	}
+	Tasks[name].run = func() {
+		color.White("➤ Executing task %s", color.YellowString(name))
+		// set task context
+		TaskContext = Tasks[name]
+		//executed task's func
+		f()
+	}
 	return Tasks[name]
 }
 
