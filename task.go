@@ -168,7 +168,7 @@ func (t *task) help(taskName string) string {
 func (t *task) execute(taskName string, cmdArgs []string) error {
 	err := t.parseArgs(cmdArgs)
 	if err != nil {
-		t.printhelp(taskName)
+		t.printhelp(t.Name)
 		return err
 	}
 
@@ -180,7 +180,7 @@ func (t *task) execute(taskName string, cmdArgs []string) error {
 
 	// Is this command only used to hold subcommands?
 	if t.run == nil {
-		t.printhelp(taskName)
+		t.printhelp(t.Name)
 		return nil
 	}
 

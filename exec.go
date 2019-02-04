@@ -45,34 +45,17 @@ func Init() {
 		}
 	}
 
-	for name, taskGroup := range TaskGroups {
-		taskGroup.task.run = func() {
-			for _, task := range taskGroup.tasks {
-				if Tasks[task] == nil {
-					continue
-				}
-
-				if Tasks[task].once && Tasks[task].executedOnce {
-					continue
-				}
-
-				TaskContext = Tasks[task]
-				Tasks[task].run()
-
-				if Tasks[task].once && !Tasks[task].executedOnce {
-					Tasks[task].executedOnce = true
-				}
-			}
-		}
-		taskGroup.task.Arguments = Arguments
-		taskGroup.task.Options = mergeOptions(Options, taskGroup.task.Options)
-		Tasks[name] = taskGroup.task
-		subtasks[name] = taskGroup.task
+	for name := range TaskGroups {
+		TaskGroups[name].task.Arguments = Arguments
+		TaskGroups[name].task.Options = mergeOptions(Options, TaskGroups[name].task.Options)
+		Tasks[name] = TaskGroups[name].task
+		subtasks[name] = TaskGroups[name].task
 	}
 
 	var rootTask = task{
 		subtasks: subtasks,
 	}
+
 	rootTask.Arguments = Arguments
 	rootTask.Options = mergeOptions(Options, rootTask.Options)
 
@@ -197,7 +180,28 @@ func Task(name string, f func()) *task {
 func TaskGroup(name string, tasks ...string) *taskGroup {
 	TaskGroups[name] = &taskGroup{
 		Name: name,
-		task: &task{},
+		task: &task{
+			Name: name,
+			run: func() {
+				color.White("➤ Executing task group %s", color.YellowString(name))
+				for _, task := range tasks {
+					if Tasks[task] == nil {
+						continue
+					}
+
+					if Tasks[task].once && Tasks[task].executedOnce {
+						continue
+					}
+
+					TaskContext = Tasks[task]
+					Tasks[task].run()
+
+					if Tasks[task].once && !Tasks[task].executedOnce {
+						Tasks[task].executedOnce = true
+					}
+				}
+			},
+		},
 	}
 	TaskGroups[name].tasks = append(TaskGroups[name].tasks, tasks...)
 	return TaskGroups[name]

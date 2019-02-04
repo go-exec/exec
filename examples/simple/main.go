@@ -128,8 +128,16 @@ func main() {
 		ShortDescription("Testing get3 in different servers contexts")
 
 	exec.
-		TaskGroup("deploy", "test1", "test2").
-		ShortDescription("Deploy code")
+		TaskGroup("deploy1", "test1", "test2").
+		ShortDescription("Deploy code 1")
+
+	exec.
+		TaskGroup("deploy2", "local", "test3").
+		ShortDescription("Deploy code 2")
+
+	exec.
+		TaskGroup("deploy3", "get").
+		ShortDescription("Deploy code 3")
 
 	exec.Init()
 }
