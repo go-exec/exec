@@ -3,12 +3,21 @@ package main
 import (
 	"fmt"
 	"github.com/go-exec/exec"
+	"time"
 )
 
 /*
 Example with general setup of tasks
 */
 func main() {
+	exec.Task("onStart", func() {
+		exec.Set("startTime", time.Now())
+	}).Private()
+
+	exec.Task("onEnd", func() {
+		exec.Println(fmt.Sprintf("Finished in %s!`", time.Now().Sub(exec.Get("startTime").Time()).String()))
+	}).Private()
+
 	type F struct {
 		F func() interface{}
 	}

@@ -16,10 +16,12 @@ var errInvalidParams = errors.New("invalid parameters")
 
 type task struct {
 	Name             string
-	run              taskFunction
-	subtasks         map[string]*task
 	Options          map[string]*Option
 	Arguments        map[string]*Argument
+
+    run              taskFunction
+    skipOnServers    bool
+    subtasks         map[string]*task
 	shortDescription string
 	description      string
 	once             bool
@@ -80,6 +82,11 @@ func (t *task) Once() *task {
 func (t *task) Private() *task {
 	t.private = true
 	return t
+}
+
+func (t *task) SkipOnServers() *task {
+    t.skipOnServers = true
+    return t
 }
 
 func (t *task) OnlyOnServers(servers []string) *task {

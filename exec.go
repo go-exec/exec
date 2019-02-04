@@ -193,24 +193,32 @@ func Task(name string, f func()) *task {
 		// set task context
 		TaskContext = Tasks[name]
 
-		run, onServers := shouldIRun()
+		//skip tasks's server checking if requested
+		if !TaskContext.skipOnServers {
+			run, onServers := shouldIRun()
 
-		if !run {
-			taskNotAllowedToRunPrint(onServers, name)
-		} else {
-			for _, server := range Servers {
-				for _, onServer := range onServers {
-					if (server.Name == onServer || server.HasRole(onServer)) && Servers[onServer] != nil {
-						// set server context
-						ServerContext = server
+			if !run {
+				taskNotAllowedToRunPrint(onServers, name)
+			} else {
+				for _, server := range Servers {
+					for _, onServer := range onServers {
+						if (server.Name == onServer || server.HasRole(onServer)) && Servers[onServer] != nil {
+							// set server context
+							ServerContext = server
 
-						color.White("➤ Executing task %s", color.YellowString(name))
+							color.White("➤ Executing task %s", color.YellowString(name))
 
-						//executed task's func
-						f()
+							//executed task's func
+							f()
+						}
 					}
 				}
 			}
+		} else {
+			color.White("➤ Executing task %s", color.YellowString(name))
+
+			//executed task's func
+			f()
 		}
 	}
 	return Tasks[name]
@@ -421,6 +429,14 @@ func shouldIRun() (run bool, onServers []string) {
 			}
 			onServers = TaskContext.onlyOnServers
 		}
+
+		if TaskContext.skipOnServers {
+			run = true
+		}
+
+		if TaskContext.once && !TaskContext.executedOnce {
+			run = true
+		}
 	}
 
 	return run, onServers
@@ -437,6 +453,7 @@ func taskNotAllowedToRunPrint(onServers []string, task string) {
 // onStart task setup
 func onStart() {
 	if task, ok := Tasks["onStart"]; ok {
+		Tasks["onStart"].SkipOnServers()
 		task.run()
 	}
 }
@@ -444,6 +461,7 @@ func onStart() {
 // onEnd task setup
 func onEnd() {
 	if task, ok := Tasks["onEnd"]; ok {
+		Tasks["onEnd"].SkipOnServers()
 		task.run()
 	}
 }
