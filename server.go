@@ -42,5 +42,9 @@ func (s *server) GetUser() string {
 }
 
 func (s *server) GetHost() string {
-	return s.Dsn[strings.Index(s.Dsn, "@")+1:strings.Index(s.Dsn, ":")]
+	if (strings.Index(s.Dsn, ":") > 0) {
+		return s.Dsn[strings.Index(s.Dsn, "@")+1:strings.Index(s.Dsn, ":")]
+	} else {
+		return s.Dsn[strings.Index(s.Dsn, "@")+1:]
+	}
 }

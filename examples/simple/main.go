@@ -20,9 +20,9 @@ func main() {
 	exec.AddArgument(stage)
 
 	//run always on the server set by stage dynamically
-	exec.OnServers(func() []string {
-		return []string{exec.GetArgument("stage").String()}
-	})
+	//exec.OnServers(func() []string {
+	//	return []string{exec.GetArgument("stage").String()}
+	//})
 
 	arg2 := exec.NewArgument("arg2", "Provide the arg2")
 	arg2.Default = "test"
@@ -170,6 +170,14 @@ func main() {
 			})
 		}).
 		OnlyOnServers([]string{"prod1"})
+
+	exec.
+		Task("servercontext:host", func() {
+			fmt.Println(exec.ServerContext.Name, exec.ServerContext.GetHost())
+		}).
+		OnServers(func() []string {
+			return []string{"prod1", "prod2"}
+		})
 
 	exec.Before("test3", "local")
 	exec.Before("get3", "test3")
