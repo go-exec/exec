@@ -27,7 +27,7 @@ var (
 	// TaskContext is the current executed task
 	TaskContext *task
 
-	serverContextF   = func() string { return "" } //must return one server name
+	serverContextF   = func() []string { return []string{} } //must return one server name
 	argumentSequence int
 )
 
@@ -167,7 +167,7 @@ func Task(name string, f func()) *task {
 		Name:           name,
 		Arguments:      make(map[string]*Argument),
 		Options:        make(map[string]*Option),
-		serverContextF: func() string { return "" },
+		serverContextF: func() []string { return []string{} },
 		run: func() {
 			color.White("➤ Executing task %s", color.YellowString(name))
 			f()
@@ -230,8 +230,8 @@ func Println(text string) {
 	fmt.Println(Parse(text))
 }
 
-// OnServer sets the server context dynamically
-func OnServer(f func() string) {
+// OnServers sets the server context dynamically
+func OnServers(f func() []string) {
 	serverContextF = f
 }
 
@@ -274,110 +274,108 @@ func RemoteRun(command string, server *server) (o output) {
 	return o
 }
 
-// Remote runs a command on one server
+// Remote runs a command on one or more onServers
+// if it runs on only one server, it returns the output
 func Remote(command string, args ...interface{}) (o output) {
-	run, onServer := shouldIRun()
+	run, onServers := shouldIRun()
 
-	if run && Servers[onServer] != nil {
-		return RemoteRun(fmt.Sprintf(command, args...), Servers[onServer])
+	if !run {
+		notAllowedForPrint(onServers, fmt.Sprintf(command, args...))
+		return o
 	}
 
-	notAllowedForPrint(onServer, fmt.Sprintf(command, args...))
-	return o
-}
+	var outputs []output
 
-// Remotes runs a command on servers with a specific role or name key
-func Remotes(command string, args ...interface{}) {
-	run, onServer := shouldIRun()
-
-	for name, server := range Servers {
-		if server.HasRole(onServer) || name == onServer {
-			if run {
-				go RemoteRun(fmt.Sprintf(command, args...), server)
-			} else {
-				notAllowedForPrint(onServer, fmt.Sprintf(command, args...))
+	for _, server := range Servers {
+		for _, onServer := range onServers {
+			if (server.Name == onServer || server.HasRole(onServer)) && Servers[onServer] != nil {
+				outputs = append(outputs, RemoteRun(fmt.Sprintf(command, args...), Servers[onServer]))
 			}
 		}
 	}
+
+	if len(outputs) == 1 {
+		return outputs[0]
+	} else if len(outputs) > 1 {
+		return o
+	}
+
+	return o
 }
 
 // Upload uploads a file from local to remote, using native scp binary
 func Upload(local, remote string) {
-	run, onServer := shouldIRun()
+	run, onServers := shouldIRun()
 
-	if run && Servers[onServer] != nil {
-		var args = []string{"scp"}
-		if Servers[onServer].key != nil {
-			args = append(args, "-i "+*Servers[onServer].key)
+	for _, onServer := range onServers {
+		if run && Servers[onServer] != nil {
+			var args = []string{"scp"}
+			if Servers[onServer].key != nil {
+				args = append(args, "-i "+*Servers[onServer].key)
+			}
+			args = append(args, local, Servers[onServer].Host+":"+remote)
+
+			Local(strings.Join(args, " "))
+		} else {
+			notAllowedForPrint(onServers, fmt.Sprintf("scp (local)%s > (remote)%s", local, remote))
 		}
-		args = append(args, local, Servers[onServer].Host+":"+remote)
-
-		Local(strings.Join(args, " "))
-	} else {
-		fmt.Printf("%s%s%s\n", color.CyanString("[%s] %s Uploading `", getOnServerForPrint(onServer), ">"), color.WhiteString(local), color.CyanString("` not allowed to run"))
-		color.Cyan("Reasons: onServer AND/OR onlyOnServers is not met")
 	}
 }
 
 // Download downloads a file from remote to local, using native scp binary
 func Download(remote, local string) {
-	run, onServer := shouldIRun()
+	run, onServers := shouldIRun()
 
-	if run && Servers[onServer] != nil {
-		var args = []string{"scp"}
-		if Servers[onServer].key != nil {
-			args = append(args, "-i "+*Servers[onServer].key)
+	for _, onServer := range onServers {
+		if run && Servers[onServer] != nil {
+			var args = []string{"scp"}
+			if Servers[onServer].key != nil {
+				args = append(args, "-i "+*Servers[onServer].key)
+			}
+			args = append(args, Servers[onServer].Host+":"+remote, local)
+
+			Local(strings.Join(args, " "))
+		} else {
+			notAllowedForPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
 		}
-		args = append(args, Servers[onServer].Host+":"+remote, local)
-
-		Local(strings.Join(args, " "))
-	} else {
-		fmt.Printf("%s%s%s\n", color.CyanString("[%s] %s Uploading `", getOnServerForPrint(onServer), ">"), color.WhiteString(local), color.CyanString("` not allowed to run"))
-		color.Cyan("Reasons: onServer AND/OR onlyOnServers is not met")
 	}
 }
 
-func shouldIRun() (run bool, onServer string) {
-	//default values if server context is set
-	if s := serverContextF(); s != "" {
+func shouldIRun() (run bool, onServers []string) {
+	//default values if serverContextF is set
+	if s := serverContextF(); len(s) > 0 {
 		run = true
-		onServer = s
+		onServers = s
 	}
 
 	//inside a task
 	if TaskContext != nil {
-		//task has a server
-		if s := TaskContext.serverContextF(); s != "" {
+		//task has a serverContextF
+		if s := TaskContext.serverContextF(); len(s) > 0 {
 			run = true
-			onServer = s
+			onServers = s
 		}
 
 		//task needs to run only on some servers
 		if len(TaskContext.onlyOnServers) > 0 {
 			run = false
-			for _, sN := range TaskContext.onlyOnServers {
-				//task on server matches only on servers
-				if onServer == sN {
-					run = true
+			for _, oS := range onServers {
+				for _, oOS := range TaskContext.onlyOnServers {
+					//task on server matches only on servers
+					if oS == oOS {
+						run = true
+					}
 				}
 			}
+			onServers = TaskContext.onlyOnServers
 		}
 	}
 
-	return run, onServer
+	return run, onServers
 }
 
-func getOnServerForPrint(onServer string) string {
-	if onServer != "" {
-		return onServer
-	}
-
-	return "?"
-}
-
-func notAllowedForPrint(onServer, command string) {
-	fmt.Printf("%s%s%s\n", color.CyanString("[%s] %s Command `", getOnServerForPrint(onServer), ">"), color.WhiteString(command), color.CyanString("` not allowed to run"))
-	color.Cyan("Reasons: onServer AND/OR onlyOnServers is not met")
+func notAllowedForPrint(onServers []string, command string) {
+	fmt.Printf("%s%s%s\n", color.CyanString("[local] > Command `"), color.WhiteString(command), color.CyanString("` can run only on %s", onServers))
 }
 
 // onStart task setup

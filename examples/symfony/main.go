@@ -35,8 +35,8 @@ func main() {
 		Set("branch", "production")
 
 	//run always on the server set by stage dynamically
-	exec.OnServer(func() string {
-		return exec.GetArgument("stage").String()
+	exec.OnServers(func() []string {
+		return []string{exec.GetArgument("stage").String()}
 	})
 
 	exec.Init()

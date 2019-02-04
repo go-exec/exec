@@ -1,10 +1,9 @@
 package exec
 
 type taskGroup struct {
-	Name          string
-	tasks         []string
-	task          *task
-	onlyOnServers []string
+	Name  string
+	tasks []string
+	task  *task
 }
 
 func (t *taskGroup) ShortDescription(desc string) *taskGroup {
@@ -22,11 +21,6 @@ func (t *taskGroup) AddOption(option *Option) *taskGroup {
 	return t
 }
 
-func (t *taskGroup) OnlyOnServers(servers []string) *taskGroup {
-	t.onlyOnServers = servers
-	return t
-}
-
-func (t *taskGroup) OnServer(f func() string) {
+func (t *taskGroup) OnServers(f func() []string) {
 	t.task.serverContextF = f
 }

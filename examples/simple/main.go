@@ -20,8 +20,8 @@ func main() {
 	exec.AddArgument(stage)
 
 	//run always on the server set by stage dynamically
-	exec.OnServer(func() string {
-		return exec.GetArgument("stage").String()
+	exec.OnServers(func() []string {
+		return []string{exec.GetArgument("stage").String()}
 	})
 
 	arg2 := exec.NewArgument("arg2", "Provide the arg2")
@@ -138,6 +138,37 @@ func main() {
 	exec.
 		TaskGroup("deploy3", "get").
 		ShortDescription("Deploy code 3")
+
+	exec.
+		Task("onservers:a", func() {
+			exec.RunIfNoBinary("docker", []string{
+				"echo 'a'",
+				"echo 'b'",
+			})
+		}).
+		OnServers(func() []string {
+			return []string{"prod1", "prod2"}
+		})
+
+	exec.
+		Task("onservers:b", func() {
+			exec.RunIfNoBinary("wget", []string{
+				"echo 'a'",
+				"echo 'b'",
+			})
+		}).
+		OnServers(func() []string {
+			return []string{"prod1", "prod2"}
+		})
+
+	exec.
+		Task("onservers:c", func() {
+			exec.RunIfNoBinary("docker", []string{
+				"echo 'a'",
+				"echo 'b'",
+			})
+		}).
+		OnlyOnServers([]string{"prod1"})
 
 	exec.Init()
 }

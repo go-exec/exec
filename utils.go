@@ -184,7 +184,7 @@ func commandToString(run interface{}) string {
 	var runS string
 	rt := reflect.TypeOf(run)
 	switch rt.Kind() {
-	case reflect.Array:
+	case reflect.Slice:
 		runS = strings.Join(run.([]string), " ; ")
 		break
 	case reflect.String:
