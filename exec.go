@@ -188,7 +188,6 @@ func Task(name string, f func()) *task {
 		Arguments:      make(map[string]*Argument),
 		Options:        make(map[string]*Option),
 		serverContextF: func() []string { return []string{} },
-		skipOnServers:  false,
 	}
 	Tasks[name].run = func() {
 		// set task context
@@ -398,9 +397,10 @@ func contains(slice []string, item string) bool {
 }
 
 func shouldIRun() (run bool, onServers []string) {
+	run = true
+
 	//default values if serverContextF is set
 	if s := serverContextF(); len(s) > 0 {
-		run = true
 		onServers = s
 	}
 
@@ -408,7 +408,6 @@ func shouldIRun() (run bool, onServers []string) {
 	if TaskContext != nil {
 		//task has a serverContextF
 		if s := TaskContext.serverContextF(); len(s) > 0 {
-			run = true
 			onServers = s
 		}
 
@@ -426,12 +425,8 @@ func shouldIRun() (run bool, onServers []string) {
 			onServers = TaskContext.onlyOnServers
 		}
 
-		if TaskContext.skipOnServers {
-			run = true
-		}
-
-		if TaskContext.once && !TaskContext.executedOnce {
-			run = true
+		if TaskContext.once && TaskContext.executedOnce {
+			run = false
 		}
 	}
 
@@ -449,7 +444,6 @@ func taskNotAllowedToRunPrint(onServers []string, task string) {
 // onStart task setup
 func onStart() {
 	if task, ok := Tasks["onStart"]; ok {
-		Tasks["onStart"].SkipOnServers()
 		task.run()
 	}
 }
@@ -457,7 +451,6 @@ func onStart() {
 // onEnd task setup
 func onEnd() {
 	if task, ok := Tasks["onEnd"]; ok {
-		Tasks["onEnd"].SkipOnServers()
 		task.run()
 	}
 }

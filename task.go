@@ -20,7 +20,6 @@ type task struct {
 	Arguments map[string]*Argument
 
 	run              taskFunction
-	skipOnServers    bool
 	subtasks         map[string]*task
 	shortDescription string
 	description      string
@@ -81,11 +80,6 @@ func (t *task) Once() *task {
 
 func (t *task) Private() *task {
 	t.private = true
-	return t
-}
-
-func (t *task) SkipOnServers() *task {
-	t.skipOnServers = true
 	return t
 }
 
