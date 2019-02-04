@@ -171,6 +171,10 @@ func main() {
 		OnlyOnServers([]string{"prod1"})
 
 	exec.Before("test3", "local")
+	exec.Before("get3", "test3")
+	exec.Before("get3", "local")
+	exec.After("local", "onservers:a")
+	exec.After("onservers:a", "local")
 
 	exec.Init()
 }

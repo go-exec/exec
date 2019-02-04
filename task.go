@@ -186,28 +186,39 @@ func (t *task) execute(taskName string, cmdArgs []string) error {
 		return nil
 	}
 
-	TaskContext = t
+	// Execute it only once if requested
+	if t.once && t.executedOnce {
+		return nil
+	}
 
 	// Executing the onStart task
 	onStart()
 
 	if len(t.before) > 0 {
 		for _, tb := range t.before {
+			TaskContext = tb
 			tb.run()
 		}
 	}
 
 	// Runs the task's func
+	TaskContext = t
 	t.run()
 
 	if len(t.after) > 0 {
 		for _, ta := range t.after {
+			TaskContext = ta
 			ta.run()
 		}
 	}
 
 	// Executing the onEnd task
 	onEnd()
+
+	// Execute it only once if requested
+	if t.once && !t.executedOnce {
+		t.executedOnce = true
+	}
 
 	return nil
 }
