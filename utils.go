@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"path"
 )
 
 // Cd is a remote helper function that runs a `cd` before a command
@@ -76,7 +77,7 @@ func UploadFileSudo(source, destination string) {
 func UploadTemplateFileSudo(source, destination string, context interface{}) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
 
-	t, err := template.New(tempFile).ParseFiles(source)
+	t, err := template.New(path.Base(source)).ParseFiles(source)
 	if err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
 	}

@@ -341,7 +341,7 @@ func Upload(local, remote string) {
 
 	for _, onServer := range onServers {
 		if run && Servers[onServer] != nil {
-			var args = []string{"scp"}
+			var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
 			if Servers[onServer].key != nil {
 				args = append(args, "-i "+*Servers[onServer].key)
 			}
@@ -360,7 +360,7 @@ func Download(remote, local string) {
 
 	for _, onServer := range onServers {
 		if run && Servers[onServer] != nil {
-			var args = []string{"scp"}
+			var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
 			if Servers[onServer].key != nil {
 				args = append(args, "-i "+*Servers[onServer].key)
 			}
