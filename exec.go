@@ -188,37 +188,37 @@ func Task(name string, f func()) *task {
 		Arguments:      make(map[string]*Argument),
 		Options:        make(map[string]*Option),
 		serverContextF: func() []string { return []string{} },
+		skipOnServers:  false,
 	}
 	Tasks[name].run = func() {
 		// set task context
 		TaskContext = Tasks[name]
 
+		run, onServers := shouldIRun()
+
 		//skip tasks's server checking if requested
-		if !TaskContext.skipOnServers {
-			run, onServers := shouldIRun()
+		if run && len(onServers) > 0 {
+			for _, server := range Servers {
+				for _, onServer := range onServers {
+					if (server.Name == onServer || server.HasRole(onServer)) && Servers[onServer] != nil {
+						// set server context
+						ServerContext = server
 
-			if !run {
-				taskNotAllowedToRunPrint(onServers, name)
-			} else {
-				for _, server := range Servers {
-					for _, onServer := range onServers {
-						if (server.Name == onServer || server.HasRole(onServer)) && Servers[onServer] != nil {
-							// set server context
-							ServerContext = server
+						color.White("➤ Executing task %s", color.YellowString(name))
 
-							color.White("➤ Executing task %s", color.YellowString(name))
-
-							//executed task's func
-							f()
-						}
+						//execute task's func
+						f()
 					}
 				}
 			}
-		} else {
+
+		} else if run && len(onServers) == 0 {
 			color.White("➤ Executing task %s", color.YellowString(name))
 
-			//executed task's func
+			//execute task's func
 			f()
+		} else {
+			taskNotAllowedToRunPrint(onServers, name)
 		}
 	}
 	return Tasks[name]
