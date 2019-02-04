@@ -27,6 +27,8 @@ type task struct {
 	private          bool
 	onlyOnServers    []string
 	serverContextF   func() []string
+	before           []*task
+	after            []*task
 }
 
 type taskFunction func()
@@ -189,8 +191,20 @@ func (t *task) execute(taskName string, cmdArgs []string) error {
 	// Executing the onStart task
 	onStart()
 
+	if len(t.before) > 0 {
+		for _, tb := range t.before {
+			tb.run()
+		}
+	}
+
 	// Runs the task's func
 	t.run()
+
+	if len(t.after) > 0 {
+		for _, ta := range t.after {
+			ta.run()
+		}
+	}
 
 	// Executing the onEnd task
 	onEnd()

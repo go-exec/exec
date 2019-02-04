@@ -27,6 +27,8 @@ var (
 	// TaskContext is the current executed task
 	TaskContext *task
 
+	before = make(map[string][]string)
+	after = make(map[string][]string)
 	serverContextF   = func() []string { return []string{} } //must return one server name
 	argumentSequence int
 )
@@ -50,6 +52,23 @@ func Init() {
 		TaskGroups[name].task.Options = mergeOptions(Options, TaskGroups[name].task.Options)
 		Tasks[name] = TaskGroups[name].task
 		subtasks[name] = TaskGroups[name].task
+	}
+
+	for _, task := range Tasks {
+		if before[task.Name] != nil {
+			for _, bt := range before[task.Name] {
+				if Tasks[bt] != nil {
+					task.before = append(task.before, Tasks[bt])
+				}
+			}
+		}
+		if after[task.Name] != nil {
+			for _, at := range after[task.Name] {
+				if Tasks[at] != nil {
+					task.after = append(task.after, Tasks[at])
+				}
+			}
+		}
 	}
 
 	var rootTask = task{
@@ -339,6 +358,34 @@ func Download(remote, local string) {
 			notAllowedForPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
 		}
 	}
+}
+
+// Before sets tasks to run before task
+func Before(task string, tasksBefore ...string) {
+	for _, tb := range tasksBefore {
+		if !contains(before[task], tb) {
+			before[task] = append(before[task], tb)
+		}
+	}
+}
+
+// After sets tasks to run after task
+func After(task string, tasksAfter ...string) {
+	for _, ta := range tasksAfter {
+		if !contains(after[task], ta) {
+			after[task] = append(after[task], ta)
+		}
+	}
+}
+
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
 }
 
 func shouldIRun() (run bool, onServers []string) {

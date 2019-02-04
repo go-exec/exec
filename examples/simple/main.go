@@ -170,5 +170,7 @@ func main() {
 		}).
 		OnlyOnServers([]string{"prod1"})
 
+	exec.Before("test3", "local")
+
 	exec.Init()
 }
