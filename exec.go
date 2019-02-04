@@ -190,11 +190,28 @@ func Task(name string, f func()) *task {
 		serverContextF: func() []string { return []string{} },
 	}
 	Tasks[name].run = func() {
-		color.White("➤ Executing task %s", color.YellowString(name))
 		// set task context
 		TaskContext = Tasks[name]
-		//executed task's func
-		f()
+
+		run, onServers := shouldIRun()
+
+		if !run {
+			taskNotAllowedToRunPrint(onServers, name)
+		} else {
+			for _, server := range Servers {
+				for _, onServer := range onServers {
+					if (server.Name == onServer || server.HasRole(onServer)) && Servers[onServer] != nil {
+						// set server context
+						ServerContext = server
+
+						color.White("➤ Executing task %s", color.YellowString(name))
+
+						//executed task's func
+						f()
+					}
+				}
+			}
+		}
 	}
 	return Tasks[name]
 }
@@ -298,33 +315,16 @@ func RemoteRun(command string, server *server) (o output) {
 	return o
 }
 
-// Remote runs a command on one or more onServers
-// if it runs on only one server, it returns the output
+// Remote runs a command with args, in the ServerContext
 func Remote(command string, args ...interface{}) (o output) {
 	run, onServers := shouldIRun()
 
 	if !run {
-		notAllowedForPrint(onServers, fmt.Sprintf(command, args...))
+		commandNotAllowedToRunPrint(onServers, fmt.Sprintf(command, args...))
 		return o
 	}
 
-	var outputs []output
-
-	for _, server := range Servers {
-		for _, onServer := range onServers {
-			if (server.Name == onServer || server.HasRole(onServer)) && Servers[onServer] != nil {
-				outputs = append(outputs, RemoteRun(fmt.Sprintf(command, args...), Servers[onServer]))
-			}
-		}
-	}
-
-	if len(outputs) == 1 {
-		return outputs[0]
-	} else if len(outputs) > 1 {
-		return o
-	}
-
-	return o
+	return RemoteRun(fmt.Sprintf(command, args...), ServerContext)
 }
 
 // Upload uploads a file from local to remote, using native scp binary
@@ -341,7 +341,7 @@ func Upload(local, remote string) {
 
 			Local(strings.Join(args, " "))
 		} else {
-			notAllowedForPrint(onServers, fmt.Sprintf("scp (local)%s > (remote)%s", local, remote))
+			commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (local)%s > (remote)%s", local, remote))
 		}
 	}
 }
@@ -360,7 +360,7 @@ func Download(remote, local string) {
 
 			Local(strings.Join(args, " "))
 		} else {
-			notAllowedForPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
+			commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
 		}
 	}
 }
@@ -426,8 +426,12 @@ func shouldIRun() (run bool, onServers []string) {
 	return run, onServers
 }
 
-func notAllowedForPrint(onServers []string, command string) {
+func commandNotAllowedToRunPrint(onServers []string, command string) {
 	fmt.Printf("%s%s%s\n", color.CyanString("[local] > Command `"), color.WhiteString(command), color.CyanString("` can run only on %s", onServers))
+}
+
+func taskNotAllowedToRunPrint(onServers []string, task string) {
+	fmt.Printf("%s%s%s\n", color.CyanString("[local] > Task `"), color.WhiteString(task), color.CyanString("` can run only on %s", onServers))
 }
 
 // onStart task setup
