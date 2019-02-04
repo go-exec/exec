@@ -4,7 +4,7 @@ import "strings"
 
 type server struct {
 	Name    string
-	Host    string
+	Dsn     string
 	Configs map[string]*config
 	key     *string
 
@@ -38,5 +38,9 @@ func (s *server) Key(file string) *server {
 }
 
 func (s *server) GetUser() string {
-	return s.Host[:strings.Index(s.Host, "@")-1]
+	return s.Dsn[:strings.Index(s.Dsn, "@")-1]
+}
+
+func (s *server) GetHost() string {
+	return s.Dsn[strings.Index(s.Dsn, "@")+1:strings.Index(s.Dsn, ":")]
 }

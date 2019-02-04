@@ -27,8 +27,8 @@ var (
 	// TaskContext is the current executed task
 	TaskContext *task
 
-	before = make(map[string][]string)
-	after = make(map[string][]string)
+	before           = make(map[string][]string)
+	after            = make(map[string][]string)
 	serverContextF   = func() []string { return []string{} } //must return one server name
 	argumentSequence int
 )
@@ -169,10 +169,11 @@ func Has(name string) bool {
 }
 
 // Server adds a new Server to exec
-func Server(name string, host string) *server {
+// dsn should be user@host:port
+func Server(name string, dsn string) *server {
 	Servers[name] = &server{
 		Name:      name,
-		Host:      host,
+		Dsn:       dsn,
 		Configs:   make(map[string]*config),
 		sshClient: &sshClient{},
 	}
@@ -266,7 +267,7 @@ func RemoteRun(command string, server *server) (o output) {
 	color.Green("[%s] %s %s", server.Name, ">", color.WhiteString(command))
 
 	if !server.sshClient.connOpened {
-		err := server.sshClient.Connect(server.Host)
+		err := server.sshClient.Connect(server.Dsn)
 		if err != nil {
 			color.Red("[%s] %s %s", "local", "<", err)
 			o.err = err
@@ -336,7 +337,7 @@ func Upload(local, remote string) {
 			if Servers[onServer].key != nil {
 				args = append(args, "-i "+*Servers[onServer].key)
 			}
-			args = append(args, local, Servers[onServer].Host+":"+remote)
+			args = append(args, local, Servers[onServer].Dsn+":"+remote)
 
 			Local(strings.Join(args, " "))
 		} else {
@@ -355,7 +356,7 @@ func Download(remote, local string) {
 			if Servers[onServer].key != nil {
 				args = append(args, "-i "+*Servers[onServer].key)
 			}
-			args = append(args, Servers[onServer].Host+":"+remote, local)
+			args = append(args, Servers[onServer].Dsn+":"+remote, local)
 
 			Local(strings.Join(args, " "))
 		} else {
