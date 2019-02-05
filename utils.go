@@ -47,9 +47,9 @@ func RunIfNoBinary(binary string, command interface{}) (o output) {
 }
 
 // RunIfNoBinaries runs multiple RunIfNoBinary
-func RunIfNoBinaries(config map[string]string) {
-	for binary, run := range config {
-		RunIfNoBinary(binary, run)
+func RunIfNoBinaries(config map[string]interface{}) {
+	for binary, command := range config {
+		RunIfNoBinary(binary, command)
 	}
 }
 
@@ -60,9 +60,9 @@ func RunIf(condition string, command interface{}) (o output) {
 }
 
 // RunIfs runs multiple RunIf
-func RunIfs(config map[string]string) {
-	for condition, run := range config {
-		RunIf(condition, run)
+func RunIfs(config map[string]interface{}) {
+	for condition, command := range config {
+		RunIf(condition, command)
 	}
 }
 
