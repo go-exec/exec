@@ -39,7 +39,7 @@ func Init() {
 	subtasks := make(map[string]*task)
 
 	for name, task := range Tasks {
-		task.Arguments = Arguments
+		task.Arguments = mergeArguments(Arguments, task.Arguments)
 		task.Options = mergeOptions(Options, task.Options)
 
 		if !task.private {
@@ -48,7 +48,7 @@ func Init() {
 	}
 
 	for name := range TaskGroups {
-		TaskGroups[name].task.Arguments = Arguments
+		TaskGroups[name].task.Arguments = mergeArguments(Arguments, TaskGroups[name].task.Arguments)
 		TaskGroups[name].task.Options = mergeOptions(Options, TaskGroups[name].task.Options)
 		Tasks[name] = TaskGroups[name].task
 		subtasks[name] = TaskGroups[name].task

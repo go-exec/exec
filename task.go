@@ -49,6 +49,11 @@ func (t *task) AddOption(option *Option) *task {
 	return t
 }
 
+func (t *task) AddArgument(arg *Argument) *task {
+	t.Arguments[arg.Name] = arg
+	return t
+}
+
 func (t *task) HasArgument(name string) bool {
 	_, ok := t.Arguments[name]
 	return ok

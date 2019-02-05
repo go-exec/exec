@@ -195,6 +195,23 @@ func commandToString(run interface{}) string {
 	return runS
 }
 
+func mergeArguments(maps ...map[string]*Argument) (output map[string]*Argument) {
+	size := len(maps)
+	if size == 0 {
+		return output
+	}
+	if size == 1 {
+		return maps[0]
+	}
+	output = make(map[string]*Argument)
+	for _, m := range maps {
+		for k, v := range m {
+			output[k] = v
+		}
+	}
+	return output
+}
+
 func mergeOptions(maps ...map[string]*Option) (output map[string]*Option) {
 	size := len(maps)
 	if size == 0 {
