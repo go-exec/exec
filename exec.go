@@ -203,7 +203,7 @@ func Task(name string, f func()) *task {
 						// set server context
 						ServerContext = server
 
-						color.White("➤ Executing task %s", color.YellowString(name))
+						color.White("➤ Executing task %s on server %s", color.YellowString(name), color.GreenString(fmt.Sprintf("[%s]", server.Name)))
 
 						//execute task's func
 						f()
