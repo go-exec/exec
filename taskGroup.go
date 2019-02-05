@@ -21,6 +21,7 @@ func (t *taskGroup) AddOption(option *Option) *taskGroup {
 	return t
 }
 
-func (t *taskGroup) OnServers(f func() []string) {
+func (t *taskGroup) OnServers(f func() []string) *taskGroup {
 	t.task.serverContextF = f
+	return t
 }

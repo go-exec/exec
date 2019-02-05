@@ -93,8 +93,9 @@ func (t *task) OnlyOnServers(servers []string) *task {
 	return t
 }
 
-func (t *task) OnServers(f func() []string) {
+func (t *task) OnServers(f func() []string) *task {
 	t.serverContextF = f
+	return t
 }
 
 func (t *task) getOrderedArguments() sortArguments {
