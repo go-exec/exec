@@ -334,7 +334,7 @@ func Remote(command string, args ...interface{}) (o output) {
 	return RemoteRun(fmt.Sprintf(command, args...), ServerContext)
 }
 
-// Upload uploads a file from local to remote, using native scp binary
+// Upload uploads a file or directory from local to remote, using native scp binary
 func Upload(local, remote string) {
 	run, onServers := shouldIRun()
 
@@ -342,7 +342,7 @@ func Upload(local, remote string) {
 		commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (local)%s > (remote)%s", local, remote))
 	}
 
-	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
+	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r"}
 	if ServerContext.key != nil {
 		args = append(args, "-i "+*ServerContext.key)
 	}
@@ -351,7 +351,7 @@ func Upload(local, remote string) {
 	Local(strings.Join(args, " "))
 }
 
-// Download downloads a file from remote to local, using native scp binary
+// Download downloads a file or directory from remote to local, using native scp binary
 func Download(remote, local string) {
 	run, onServers := shouldIRun()
 
@@ -359,7 +359,7 @@ func Download(remote, local string) {
 		commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
 	}
 
-	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
+	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r"}
 	if ServerContext.key != nil {
 		args = append(args, "-i "+*ServerContext.key)
 	}
