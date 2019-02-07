@@ -7,10 +7,10 @@ import (
 	"html/template"
 	"io/ioutil"
 	"os"
+	"path"
 	"reflect"
 	"regexp"
 	"strings"
-	"path"
 )
 
 // Cd is a remote helper function that runs a `cd` before a command

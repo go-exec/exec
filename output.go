@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -19,6 +20,14 @@ func (o output) HasError() bool {
 
 func (o output) String() string {
 	return o.text
+}
+
+func (o output) Int() int {
+	i, err := strconv.Atoi(o.text)
+	if err == nil {
+		return i
+	}
+	return 0
 }
 
 func (o output) Bool() bool {
