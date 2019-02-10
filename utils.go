@@ -94,8 +94,8 @@ func UploadTemplateFileSudo(source, destination string, context interface{}) {
 	}
 }
 
-// UploadContentSudo uploads a string content to a remote file with sudo
-func UploadContentSudo(content, destination string) {
+// UploadTemplateStringSudo uploads a string content to a remote file with sudo
+func UploadTemplateStringSudo(content, destination string) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
 	if err := ioutil.WriteFile(tempFile, []byte(content), os.FileMode(0644)); err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
@@ -105,8 +105,21 @@ func UploadContentSudo(content, destination string) {
 	}
 }
 
+// CompileLocalTemplate parses a local source file template with context and returns it
+func CompileLocalTemplateFile(source string, context interface{}) string {
+	t, err := template.New(path.Base(source)).ParseFiles(source)
+	if err != nil {
+		color.Red("[%s] %s %s", "local", "<", err)
+	}
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, context); err != nil {
+		color.Red("[%s] %s %s", "local", "<", err)
+	}
+	return tpl.String()
+}
+
 // CompileLocalTemplate parses a local source string template with context and returns it
-func CompileLocalTemplate(source string, context interface{}) string {
+func CompileLocalTemplateString(source string, context interface{}) string {
 	t, err := template.New(uuid.NewV4().String()).Parse(source)
 	if err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
