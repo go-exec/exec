@@ -1,7 +1,9 @@
 package exec
 
 import (
+	"bufio"
 	"bytes"
+	"fmt"
 	"github.com/fatih/color"
 	"github.com/satori/go.uuid"
 	"html/template"
@@ -192,6 +194,31 @@ func RemoveFromRemoteFile(text, file string) {
 func IsInRemoteFile(text, file string) bool {
 	text = strings.Trim(text, " ")
 	return Remote("if [ \"`sudo cat %s | grep '%s'`\" ]; then echo 'true'; fi", file, text).Bool()
+}
+
+func Ask(question string, attributes ...map[string]string) string {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	var attrs map[string]string
+	defaultResponse := ""
+
+	if len(attributes) > 0 {
+		attrs = attributes[0]
+
+		if val, ok := attrs["default"]; ok {
+			question += fmt.Sprintf(" [%s]", val)
+		}
+	}
+
+	color.Green("[%s] %s %s", "local", ">", color.WhiteString(question))
+	scanner.Scan()
+	response := scanner.Text()
+
+	if response == "" {
+
+	}
+
+	return response
 }
 
 func commandToString(run interface{}) string {

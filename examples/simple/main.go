@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/go-exec/exec"
 	"time"
 )
@@ -191,6 +192,18 @@ func main() {
 	exec.
 		Task("onservers:read", func() {
 			fmt.Printf("`%s`\n", exec.Remote("git config --get %s", "user.name").String())
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
+		})
+
+	exec.
+		Task("ask", func() {
+			response := exec.Ask("How are you?", map[string]string{
+				"default": "better",
+			})
+
+			color.Yellow("Your response is `%s`", response)
 		}).
 		OnServers(func() []string {
 			return []string{"prod1"}
