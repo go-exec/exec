@@ -188,6 +188,14 @@ func main() {
 			return []string{"prod1", "prod2"}
 		})
 
+	exec.
+		Task("onservers:read", func() {
+			fmt.Printf("`%s`\n", exec.Remote("git config --get %s", "user.name").String())
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
+		})
+
 	exec.Before("test3", "local")
 	exec.Before("get3", "test3")
 	exec.Before("get3", "local")

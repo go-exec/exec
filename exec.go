@@ -3,7 +3,7 @@ package exec
 import (
 	"fmt"
 	"github.com/fatih/color"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -259,7 +259,7 @@ func TaskGroup(name string, tasks ...string) *taskGroup {
 func Local(command string, args ...interface{}) (o output) {
 	command = Parse(fmt.Sprintf(command, args...))
 
-	color.Green("[%s] %s %s", "local", ">", color.WhiteString(command))
+	color.Green("[%s] %s %s", "local", ">", color.WhiteString("`%s`", command))
 
 	cs := strings.SplitN(command, " ", 2)
 
@@ -288,12 +288,12 @@ func RemoteRun(command string, server *server) (o output) {
 	ServerContext = server
 	command = Parse(command)
 
-	color.Green("[%s] %s %s", server.Name, ">", color.WhiteString(command))
+	color.Green("[%s] %s %s", server.Name, ">", color.WhiteString("`%s`", command))
 
 	if !server.sshClient.connOpened {
 		err := server.sshClient.Connect(server.Dsn)
 		if err != nil {
-			color.Red("[%s] %s %s", "local", "<", err)
+			color.Red("[%s] %s %q", "local", "<", err)
 			o.err = err
 		}
 	}
@@ -301,21 +301,46 @@ func RemoteRun(command string, server *server) (o output) {
 	if server.sshClient.connOpened {
 		err := server.sshClient.Run(command)
 		if err != nil {
-			color.Red("[%s] %s %s", server.Name, "<", err)
-		}
-		output, err := ioutil.ReadAll(server.sshClient.Stdout())
-
-		execErr := server.sshClient.Wait()
-
-		if execErr != nil {
-			o.err = execErr
+			o.err = err
+			color.Red("[%s] %s %q", server.Name, "<", err)
 		}
 
-		o.text = strings.TrimSpace(string(output))
-		if o.text != "" && o.err == nil {
-			color.Green("[%s] %s\n%s", server.Name, "<", color.WhiteString(o.text))
-		} else if o.text != "" && o.err != nil {
-			color.Red("[%s] %s %s", server.Name, "<", o.String())
+		output := ""
+		buf := make([]byte, 1000)
+
+		n, err := server.sshClient.remoteStdout.Read(buf)
+
+		if err != nil {
+			o.err = err
+		} else {
+			color.Green("[%s] %s\n", server.Name, "<")
+			for _, v := range buf[:n] {
+				fmt.Printf("%c", v)
+			}
+			output = string(buf[:n])
+		}
+		for err == nil {
+			// this loop will not end!!
+			n, err = server.sshClient.remoteStdout.Read(buf)
+			output += string(buf[:n])
+			for _, v := range buf[:n] {
+				fmt.Printf("%c", v)
+			}
+			if err != nil && err != io.EOF {
+				o.err = err
+			}
+		}
+
+		err = server.sshClient.Wait()
+
+		if err != nil {
+			o.err = err
+		}
+
+		o.text = strings.TrimSpace(output)
+
+		if o.text != "" && o.err != nil {
+			color.Red("[%s] %s %q", server.Name, "<", o.err)
 		}
 	}
 
