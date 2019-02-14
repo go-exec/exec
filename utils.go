@@ -107,7 +107,7 @@ func UploadTemplateStringSudo(content, destination string) {
 	}
 }
 
-// CompileLocalTemplate parses a local source file template with context and returns it
+// CompileLocalTemplateFile parses a local source file template with context and returns it
 func CompileLocalTemplateFile(source string, context interface{}) string {
 	t, err := template.New(path.Base(source)).ParseFiles(source)
 	if err != nil {
@@ -120,7 +120,7 @@ func CompileLocalTemplateFile(source string, context interface{}) string {
 	return tpl.String()
 }
 
-// CompileLocalTemplate parses a local source string template with context and returns it
+// CompileLocalTemplateString parses a local source string template with context and returns it
 func CompileLocalTemplateString(source string, context interface{}) string {
 	t, err := template.New(uuid.NewV4().String()).Parse(source)
 	if err != nil {
@@ -247,12 +247,12 @@ func AskWithConfirmation(question string, attributes ...bool) bool {
 
 	if choice, choiceValue := choices[response]; choiceValue {
 		return choice
-	} else {
-		return defaultResponse
 	}
+
+	return defaultResponse
 }
 
-/* AskWithChoices asks a question with multiple choices and waits for an answer
+/*AskWithChoices asks a question with multiple choices and waits for an answer
 
 First item from attributes must be a map with default and choices keys and string slice as values, example:
 	```
@@ -267,7 +267,7 @@ First item from attributes must be a map with default and choices keys and strin
 				},
 			}
     ```
- */
+*/
 func AskWithChoices(question string, attributes ...map[string]interface{}) (responses []string) {
 	scanner := bufio.NewScanner(os.Stdin)
 
