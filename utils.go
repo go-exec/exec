@@ -196,29 +196,139 @@ func IsInRemoteFile(text, file string) bool {
 	return Remote("if [ \"`sudo cat %s | grep '%s'`\" ]; then echo 'true'; fi", file, text).Bool()
 }
 
-func Ask(question string, attributes ...map[string]string) string {
+// Ask asks a question and waits for an answer
+// first item from attributes is set as default value, which is optional
+func Ask(question string, attributes ...string) string {
 	scanner := bufio.NewScanner(os.Stdin)
 
-	var attrs map[string]string
-	defaultResponse := ""
+	var defaultResponse string
 
-	if len(attributes) > 0 {
-		attrs = attributes[0]
+	if len(attributes) == 1 {
+		defaultResponse = attributes[0]
+		question += fmt.Sprintf(" [default: %s]", defaultResponse)
+	}
 
-		if val, ok := attrs["default"]; ok {
-			question += fmt.Sprintf(" [%s]", val)
+	color.Green("[%s] %s %s", "local", ">", color.WhiteString(question))
+	scanner.Scan()
+	response := strings.TrimSpace(scanner.Text())
+
+	if response == "" {
+		response = defaultResponse
+	}
+
+	return response
+}
+
+// AskWithConfirmation asks a confirmation question and waits for an y/n answer
+// first item from attributes is set as default value, which is optional
+func AskWithConfirmation(question string, attributes ...bool) bool {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	var defaultResponse bool
+	choices := map[string]bool{
+		"y":   true,
+		"yes": true,
+		"n":   false,
+		"no":  false,
+	}
+
+	if len(attributes) == 1 {
+		defaultResponse = attributes[0]
+		if defaultResponse {
+			question += fmt.Sprintf(" [default: Y/n]")
+		} else {
+			question += fmt.Sprintf(" [default: y/N]")
 		}
 	}
 
 	color.Green("[%s] %s %s", "local", ">", color.WhiteString(question))
 	scanner.Scan()
-	response := scanner.Text()
+	response := strings.ToLower(strings.TrimSpace(scanner.Text()))
 
-	if response == "" {
+	if choice, choiceValue := choices[response]; choiceValue {
+		return choice
+	} else {
+		return defaultResponse
+	}
+}
 
+/* AskWithChoices asks a question with multiple choices and waits for an answer
+
+First item from attributes must be a map with default and choices keys and string slice as values, example:
+	```
+	map[string]interface{}{
+				"default": []string{
+					"agent",
+				},
+				"choices": []string{
+					"agent",
+					"tty",
+					"ssh",
+				},
+			}
+    ```
+ */
+func AskWithChoices(question string, attributes ...map[string]interface{}) (responses []string) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	var (
+		attrs                map[string]interface{}
+		defaultChoices       interface{}
+		parsedDefaultChoices []string
+		foundDefaultChoices  bool
+		choices              interface{}
+		parsedChoices        []string
+		foundChoices         bool
+		loop                 = true
+	)
+
+	if len(attributes) > 0 {
+		attrs = attributes[0]
+
+		defaultChoices, foundDefaultChoices = attrs["default"]
+		choices, foundChoices = attrs["choices"]
+
+		if foundDefaultChoices {
+			parsedDefaultChoices = defaultChoices.([]string)
+			foundDefaultChoices = len(parsedDefaultChoices) > 0
+		}
+
+		if foundChoices {
+			parsedChoices = choices.([]string)
+			foundChoices = len(parsedChoices) > 0
+		}
+
+		if foundDefaultChoices {
+			question += fmt.Sprintf(" [default: %s]", strings.Join(parsedDefaultChoices, ", "))
+		}
+
+		if foundChoices {
+			question += fmt.Sprintf("\nPlease pick one or more choices, one per line, from these: %s", strings.Join(parsedChoices, ", "))
+		}
 	}
 
-	return response
+	color.Green("[%s] %s %s", "local", ">", color.WhiteString(question))
+
+	for loop {
+		scanner.Scan()
+		response := strings.TrimSpace(scanner.Text())
+
+		if response == "" {
+			loop = false
+		}
+
+		if foundChoices {
+			if contains(parsedChoices, response) {
+				responses = append(responses, response)
+			}
+		}
+	}
+
+	if len(responses) == 0 && foundDefaultChoices {
+		return parsedDefaultChoices
+	}
+
+	return responses
 }
 
 func commandToString(run interface{}) string {
@@ -267,4 +377,14 @@ func mergeOptions(maps ...map[string]*Option) (output map[string]*Option) {
 		}
 	}
 	return output
+}
+
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
 }

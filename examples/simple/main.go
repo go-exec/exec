@@ -199,11 +199,42 @@ func main() {
 
 	exec.
 		Task("ask", func() {
-			response := exec.Ask("How are you?", map[string]string{
-				"default": "better",
-			})
+			response := exec.Ask("How are you?", "better")
 
 			color.Yellow("Your response is `%s`", response)
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
+		})
+
+	exec.
+		Task("ask-confirmation", func() {
+			response := exec.AskWithConfirmation("Would you like to give it a shot?", true)
+
+			color.Yellow("Your response is `%t`", response)
+
+			response = exec.AskWithConfirmation("Would you like to give it a shot again?", false)
+
+			color.Yellow("Your response is `%t`", response)
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
+		})
+
+	exec.
+		Task("ask-choices", func() {
+			response := exec.AskWithChoices("What are your choices?", map[string]interface{}{
+				"default": []string{
+					"agent",
+				},
+				"choices": []string{
+					"agent",
+					"tty",
+					"ssh",
+				},
+			})
+
+			color.Yellow("Your responses are `%v`", response)
 		}).
 		OnServers(func() []string {
 			return []string{"prod1"}
