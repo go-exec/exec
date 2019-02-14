@@ -152,8 +152,13 @@ func (t *task) help(taskName string) string {
 
 	if len(t.subtasks) > 0 {
 		rv += color.YellowString("\nAvailable commands:\n")
-		for name, subCmd := range t.subtasks {
-			rv += fmt.Sprintf("    %-20s %s\n", color.GreenString(name), subCmd.shortDescription)
+		var subtaskNames []string
+		for subtaskName := range t.subtasks {
+			subtaskNames = append(subtaskNames, subtaskName)
+		}
+		sort.Strings(subtaskNames)
+		for _, subtaskName := range subtaskNames {
+			rv += fmt.Sprintf("    %-20s %s\n", color.GreenString(subtaskName), t.subtasks[subtaskName].shortDescription)
 		}
 	}
 
