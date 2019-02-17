@@ -92,6 +92,7 @@ func UploadTemplateFileSudo(source, destination string, context interface{}) {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
 		Upload(tempFile, tempFile)
+		Local("rm %s", tempFile)
 		Remote("sudo mv %s %s", tempFile, destination)
 	}
 }
@@ -103,7 +104,29 @@ func UploadTemplateStringSudo(content, destination string) {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
 		Upload(tempFile, tempFile)
+		Local("rm %s", tempFile)
 		Remote("sudo mv %s %s", tempFile, destination)
+	}
+}
+
+// LocalTemplateFile parses a local template file with context, and moves it to a destination
+func LocalTemplateFile(source, destination string, context interface{}) {
+	tempFile := "/tmp/" + uuid.NewV4().String()
+
+	t, err := template.New(path.Base(source)).ParseFiles(source)
+	if err != nil {
+		color.Red("[%s] %s %s", "local", "<", err)
+	}
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, context); err != nil {
+		color.Red("[%s] %s %s", "local", "<", err)
+	}
+
+	if err := ioutil.WriteFile(tempFile, tpl.Bytes(), os.FileMode(0644)); err != nil {
+		color.Red("[%s] %s %s", "local", "<", err)
+	} else {
+		Local("mv %s %s", tempFile, destination)
+		Local("rm %s", tempFile)
 	}
 }
 
