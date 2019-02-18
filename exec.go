@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -261,15 +262,66 @@ func Local(command string, args ...interface{}) (o output) {
 
 	color.Green("[%s] %s %s", "local", ">", color.WhiteString("`%s`", command))
 
-	cs := strings.SplitN(command, " ", 2)
+	cmd := exec.Command("/bin/sh", "-c", command)
 
-	output, err := exec.Command(cs[0], strings.Split(cs[1], " ")...).CombinedOutput()
-	o.text = strings.TrimSpace(string(output))
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		color.Red("[%s] %s %s", "local", "<", o.text)
-	} else {
-		color.Green("[%s] %s\n%s", "local", "<", color.WhiteString(o.text))
+		o.err = err
+		color.Red("[%s] %s %q", "local", "<", o.err)
+		return o
 	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		o.err = err
+		color.Red("[%s] %s %q", "local", "<", o.err)
+		return o
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		o.err = err
+		color.Red("[%s] %s %q", "local", "<", o.err)
+		return o
+	}
+
+	output := ""
+	buf := make([]byte, 1024)
+
+	n, err := stdout.Read(buf)
+
+	if err != nil {
+		o.err = err
+	} else {
+		color.Green("[%s] %s\n", "local", "<")
+		for _, v := range buf[:n] {
+			fmt.Printf("%c", v)
+		}
+		output = string(buf[:n])
+	}
+	for err == nil {
+		n, err = stdout.Read(buf)
+		output += string(buf[:n])
+		for _, v := range buf[:n] {
+			fmt.Printf("%c", v)
+		}
+		if err != nil && err != io.EOF {
+			o.err = err
+		}
+	}
+
+	o.text = strings.TrimSpace(string(output))
+
+	if len(o.text) == 0 {
+		color.Red("[%s] %s\n", "local", "<")
+		bytesB, _ := ioutil.ReadAll(stderr)
+		fmt.Printf("%s\n", strings.TrimSpace(string(bytesB)))
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		color.Red("[%s] %s %q", "local", "<", err)
+	}
+
 	return o
 }
 
@@ -306,7 +358,7 @@ func RemoteRun(command string, server *server) (o output) {
 		}
 
 		output := ""
-		buf := make([]byte, 1000)
+		buf := make([]byte, 1024)
 
 		n, err := server.sshClient.remoteStdout.Read(buf)
 
@@ -320,7 +372,6 @@ func RemoteRun(command string, server *server) (o output) {
 			output = string(buf[:n])
 		}
 		for err == nil {
-			// this loop will not end!!
 			n, err = server.sshClient.remoteStdout.Read(buf)
 			output += string(buf[:n])
 			for _, v := range buf[:n] {
@@ -331,16 +382,17 @@ func RemoteRun(command string, server *server) (o output) {
 			}
 		}
 
-		err = server.sshClient.Wait()
-
-		if err != nil {
-			o.err = err
-		}
-
 		o.text = strings.TrimSpace(output)
 
-		if o.text != "" && o.err != nil {
-			color.Red("[%s] %s %q", server.Name, "<", o.err)
+		if len(o.text) == 0 {
+			color.Red("[%s] %s\n", server.Name, "<")
+			bytesB, _ := ioutil.ReadAll(server.sshClient.remoteStderr)
+			fmt.Printf("%s\n", strings.TrimSpace(string(bytesB)))
+		}
+
+		err = server.sshClient.Wait()
+		if err != nil {
+			color.Red("[%s] %s %q", server.Name, "<", err)
 		}
 	}
 

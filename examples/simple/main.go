@@ -114,9 +114,28 @@ func main() {
 	exec.
 		Task("local", func() {
 			exec.Local("ls -la ~/Public; ls -la /Users/")
+			exec.Local("docker")
 		}).
 		Once().
 		ShortDescription("Running local task")
+
+	exec.
+		Task("yarn", func() {
+			exec.Local("yarn")
+		})
+
+	exec.
+		Task("docker", func() {
+			exec.Local("docker stats")
+		})
+
+	exec.
+		Task("docker-remote", func() {
+			exec.Remote("docker")
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
+		})
 
 	exec.
 		Task("get", func() {
