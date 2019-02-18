@@ -126,7 +126,6 @@ func LocalTemplateFile(source, destination string, context interface{}) {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
 		Local("mv %s %s", tempFile, destination)
-		Local("rm %s", tempFile)
 	}
 }
 
