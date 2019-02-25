@@ -30,7 +30,7 @@ var (
 
 	before           = make(map[string][]string)
 	after            = make(map[string][]string)
-	serverContextF   = func() []string { return []string{} } //must return one server name
+	serverContextF   = func() []string { return nil } //must return one server name
 	argumentSequence int
 )
 
@@ -185,10 +185,12 @@ func Server(name string, dsn string) *server {
 // it accepts a name and a func; the func content is executed on each command execution
 func Task(name string, f func()) *task {
 	Tasks[name] = &task{
-		Name:           name,
-		Arguments:      make(map[string]*Argument),
-		Options:        make(map[string]*Option),
-		serverContextF: func() []string { return []string{} },
+		Name:      name,
+		Arguments: make(map[string]*Argument),
+		Options:   make(map[string]*Option),
+		serverContextF: func() []string {
+			return nil
+		},
 	}
 	Tasks[name].run = func() {
 		// set task context
@@ -419,7 +421,11 @@ func Remote(command string, args ...interface{}) (o output) {
 		return o
 	}
 
-	return RemoteRun(fmt.Sprintf(command, args...), ServerContext)
+	if ServerContext != nil {
+		return RemoteRun(fmt.Sprintf(command, args...), ServerContext)
+	}
+
+	return o
 }
 
 // Upload uploads a file or directory from local to remote, using native scp binary
