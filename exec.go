@@ -208,6 +208,9 @@ func Task(name string, f func()) *task {
 
 						//execute task's func
 						f()
+
+						//reset server context
+						ServerContext = nil
 					}
 				}
 			}
@@ -220,6 +223,9 @@ func Task(name string, f func()) *task {
 		} else {
 			taskNotAllowedToRunPrint(onServers, name)
 		}
+
+		//reset task context
+		TaskContext = nil
 	}
 	return Tasks[name]
 }
@@ -242,12 +248,17 @@ func TaskGroup(name string, tasks ...string) *taskGroup {
 						continue
 					}
 
+					//set task context
 					TaskContext = Tasks[task]
+
 					Tasks[task].run()
 
 					if Tasks[task].once && !Tasks[task].executedOnce {
 						Tasks[task].executedOnce = true
 					}
+
+					//reset task context
+					TaskContext = nil
 				}
 			},
 		},
