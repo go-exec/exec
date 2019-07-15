@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/satori/go.uuid"
-	"html/template"
+	"text/template"
 	"io/ioutil"
 	"os"
 	"path"
