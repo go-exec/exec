@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/satori/go.uuid"
-	"text/template"
 	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
 	"regexp"
 	"strings"
+	"text/template"
 )
 
 // Cd is a remote helper function that runs a `cd` before a command
