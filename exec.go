@@ -40,8 +40,8 @@ func Init() {
 	subtasks := make(map[string]*task)
 
 	for name, task := range Tasks {
-		task.Arguments = mergeArguments(Arguments, task.Arguments)
-		task.Options = mergeOptions(Options, task.Options)
+		task.Arguments = mergeArguments(task.removeArguments, Arguments, task.Arguments)
+		task.Options = mergeOptions(task.removeOptions, Options, task.Options)
 
 		if !task.private {
 			subtasks[name] = task
@@ -49,8 +49,8 @@ func Init() {
 	}
 
 	for name := range TaskGroups {
-		TaskGroups[name].task.Arguments = mergeArguments(Arguments, TaskGroups[name].task.Arguments)
-		TaskGroups[name].task.Options = mergeOptions(Options, TaskGroups[name].task.Options)
+		TaskGroups[name].task.Arguments = mergeArguments(TaskGroups[name].task.removeArguments, Arguments, TaskGroups[name].task.Arguments)
+		TaskGroups[name].task.Options = mergeOptions(TaskGroups[name].task.removeOptions, Options, TaskGroups[name].task.Options)
 		Tasks[name] = TaskGroups[name].task
 		subtasks[name] = TaskGroups[name].task
 	}
@@ -77,7 +77,7 @@ func Init() {
 	}
 
 	rootTask.Arguments = Arguments
-	rootTask.Options = mergeOptions(Options, rootTask.Options)
+	rootTask.Options = mergeOptions(map[string]string{}, Options, rootTask.Options)
 
 	if err := run(&rootTask); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -185,9 +185,11 @@ func Server(name string, dsn string) *server {
 // it accepts a name and a func; the func content is executed on each command execution
 func Task(name string, f func()) *task {
 	Tasks[name] = &task{
-		Name:      name,
-		Arguments: make(map[string]*Argument),
-		Options:   make(map[string]*Option),
+		Name:            name,
+		Arguments:       make(map[string]*Argument),
+		Options:         make(map[string]*Option),
+		removeArguments: make(map[string]string),
+		removeOptions:   make(map[string]string),
 		serverContextF: func() []string {
 			return nil
 		},
@@ -238,7 +240,9 @@ func TaskGroup(name string, tasks ...string) *taskGroup {
 	TaskGroups[name] = &taskGroup{
 		Name: name,
 		task: &task{
-			Name: name,
+			Name:            name,
+			removeArguments: make(map[string]string),
+			removeOptions:   make(map[string]string),
 			run: func() {
 				color.White("➤ Executing task group %s", color.YellowString(name))
 				for _, task := range tasks {

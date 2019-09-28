@@ -19,7 +19,7 @@ var globalOpt = map[string]*Option{
 // that feature use the FindTask function directly.
 func run(rootTask *task) error {
 	task, taskName, taskArgs := find(rootTask, os.Args)
-	task.Options = mergeOptions(task.Options, globalOpt)
+	task.Options = mergeOptions(map[string]string{}, task.Options, globalOpt)
 	return task.execute(taskName, taskArgs)
 }
 

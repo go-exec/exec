@@ -155,7 +155,8 @@ func main() {
 		Task("get3", func() {
 			exec.Println(exec.Get("test").String())
 		}).
-		ShortDescription("Testing get3 in different servers contexts")
+		ShortDescription("Testing get3 in different servers contexts").
+		RemoveArgument("stage")
 
 	exec.
 		TaskGroup("deploy1", "test1", "test2").

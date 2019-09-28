@@ -30,6 +30,8 @@ type task struct {
 	serverContextF   func() []string
 	before           []*task
 	after            []*task
+	removeArguments  map[string]string
+	removeOptions    map[string]string
 }
 
 type taskFunction func()
@@ -49,8 +51,18 @@ func (t *task) AddOption(option *Option) *task {
 	return t
 }
 
+func (t *task) RemoveOption(optName string) *task {
+	t.removeOptions[optName] = optName
+	return t
+}
+
 func (t *task) AddArgument(arg *Argument) *task {
 	t.Arguments[arg.Name] = arg
+	return t
+}
+
+func (t *task) RemoveArgument(argName string) *task {
+	t.removeArguments[argName] = argName
 	return t
 }
 

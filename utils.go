@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/satori/go.uuid"
-	"text/template"
 	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
 	"regexp"
 	"strings"
+	"text/template"
 )
 
 // Cd is a remote helper function that runs a `cd` before a command
@@ -367,7 +367,7 @@ func commandToString(run interface{}) string {
 	return runS
 }
 
-func mergeArguments(maps ...map[string]*Argument) (output map[string]*Argument) {
+func mergeArguments(removeMap map[string]string, maps ...map[string]*Argument) (output map[string]*Argument) {
 	size := len(maps)
 	if size == 0 {
 		return output
@@ -378,13 +378,15 @@ func mergeArguments(maps ...map[string]*Argument) (output map[string]*Argument) 
 	output = make(map[string]*Argument)
 	for _, m := range maps {
 		for k, v := range m {
-			output[k] = v
+			if _, ok := removeMap[k]; !ok {
+				output[k] = v
+			}
 		}
 	}
 	return output
 }
 
-func mergeOptions(maps ...map[string]*Option) (output map[string]*Option) {
+func mergeOptions(removeMap map[string]string, maps ...map[string]*Option) (output map[string]*Option) {
 	size := len(maps)
 	if size == 0 {
 		return output
@@ -395,7 +397,9 @@ func mergeOptions(maps ...map[string]*Option) (output map[string]*Option) {
 	output = make(map[string]*Option)
 	for _, m := range maps {
 		for k, v := range m {
-			output[k] = v
+			if _, ok := removeMap[k]; !ok {
+				output[k] = v
+			}
 		}
 	}
 	return output
