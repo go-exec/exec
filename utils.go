@@ -34,7 +34,7 @@ func Parse(text string) string {
 		return text
 	}
 	return re.ReplaceAllStringFunc(text, func(str string) string {
-		name := strings.TrimRight(strings.TrimLeft(str, "{{"), "}}")
+		name := strings.TrimSuffix(strings.TrimPrefix(str, "{{"), "}}")
 		if Has(name) {
 			return Parse(Get(name).String())
 		}
@@ -359,10 +359,8 @@ func commandToString(run interface{}) string {
 	switch rt.Kind() {
 	case reflect.Slice:
 		runS = strings.Join(run.([]string), " ; ")
-		break
 	case reflect.String:
 		runS = run.(string)
-		break
 	}
 	return runS
 }

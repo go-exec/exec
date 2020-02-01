@@ -101,7 +101,7 @@ func init() {
 	}).Once().Private()
 
 	exec.Task("onEnd", func() {
-		exec.Println(fmt.Sprintf("Finished in %s!", time.Now().Sub(exec.Get("startTime").Time()).String()))
+		exec.Println(fmt.Sprintf("Finished in %s!", time.Since(exec.Get("startTime").Time()).String()))
 		exec.Println("End")
 	}).Once().Private()
 }

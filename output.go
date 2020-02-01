@@ -11,11 +11,7 @@ type output struct {
 }
 
 func (o output) HasError() bool {
-	if o.err != nil {
-		return true
-	}
-
-	return false
+	return o.err != nil
 }
 
 func (o output) String() string {
@@ -31,11 +27,7 @@ func (o output) Int() int {
 }
 
 func (o output) Bool() bool {
-	if "true" == o.text {
-		return true
-	}
-
-	return false
+	return "true" == o.text
 }
 
 func (o output) Slice(sep string) []string {

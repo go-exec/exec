@@ -121,7 +121,7 @@ func (t *task) getOrderedArguments() sortArguments {
 
 // printhelp prints the return value of help to the standard output.
 func (t *task) printhelp(taskName string) {
-	fmt.Printf(t.help(taskName))
+	fmt.Print(t.help(taskName))
 }
 
 // usageString returns a short string containing the syntax of this command.
