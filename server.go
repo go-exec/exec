@@ -38,7 +38,7 @@ func (s *server) Key(file string) *server {
 }
 
 func (s *server) GetUser() string {
-	return s.Dsn[:strings.Index(s.Dsn, "@")-1]
+	return s.Dsn[:strings.Index(s.Dsn, "@")]
 }
 
 func (s *server) GetHost() string {
