@@ -84,7 +84,7 @@ func TestAddOption(t *testing.T) {
 	}
 	AddOption(opt)
 
-	require.Equal(t, opt, Arguments[opt.Name])
+	require.Equal(t, opt, Options[opt.Name])
 }
 
 func TestGetOption(t *testing.T) {
