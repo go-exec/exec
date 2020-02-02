@@ -12,6 +12,7 @@ Example with general setup of tasks
 */
 func main() {
 	exec := e.Instance
+	defer exec.Run()
 
 	exec.Task("onStart", func() {
 		exec.Set("startTime", time.Now())
@@ -80,12 +81,18 @@ func main() {
 		Task("upload", func() {
 			exec.Remote("ls -la /")
 			exec.Upload("test.txt", "~/test.txt")
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
 		})
 
 	exec.
 		Task("download", func() {
 			exec.Remote("ls -la /")
 			exec.Download("~/test.txt", "test.txt")
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
 		})
 
 	exec.
@@ -268,6 +275,4 @@ func main() {
 	exec.After("local", "onservers:a")
 	exec.After("local", "get3")
 	exec.After("onservers:a", "local")
-
-	exec.Run()
 }
