@@ -9,6 +9,7 @@ import (
 Example of deploying a Symfony app using the deploy recipes
 */
 func main() {
+	exec := exec.Instance
 	exec.Set("repository", "git@github.com:namespace/app.git")
 	exec.Set("shared_files", []string{})
 	exec.Set("shared_dirs", []string{"var/logs", "vendor", "web/uploads", "web/media", "node_modules"})

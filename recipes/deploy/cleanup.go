@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Task("cleanup", func() {
 		releases := exec.Get("releases_list").Slice()
 		keep := exec.Get("keep_releases").Int()

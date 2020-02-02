@@ -9,6 +9,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Set("keep_releases", -1)
 
 	exec.Set("release_name", func() interface{} {

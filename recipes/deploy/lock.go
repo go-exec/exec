@@ -3,6 +3,7 @@ package deploy
 import "github.com/go-exec/exec"
 
 func init() {
+	exec := exec.Instance
 	exec.Task("deploy:lock", func() {
 		locked := exec.Remote("if [ -f {{deploy_path}}/.dep/deploy.lock ]; then echo 'true'; fi").Bool()
 

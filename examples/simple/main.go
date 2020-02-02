@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/go-exec/exec"
+	e "github.com/go-exec/exec"
 	"time"
 )
 
@@ -11,170 +11,170 @@ import (
 Example with general setup of tasks
 */
 func main() {
-	executor := exec.New()
-	
-	executor.Task("onStart", func() {
-		executor.Set("startTime", time.Now())
+	exec := e.Instance
+
+	exec.Task("onStart", func() {
+		exec.Set("startTime", time.Now())
 	}).Private()
 
-	executor.Task("onEnd", func() {
-		executor.Println(fmt.Sprintf("Finished in %s!`", time.Now().Sub(executor.Get("startTime").Time()).String()))
+	exec.Task("onEnd", func() {
+		exec.Println(fmt.Sprintf("Finished in %s!`", time.Now().Sub(exec.Get("startTime").Time()).String()))
 	}).Private()
 
 	type F struct {
 		F func() interface{}
 	}
 
-	stage := executor.NewArgument("stage", "Provide the running stage")
+	stage := exec.NewArgument("stage", "Provide the running stage")
 	stage.Default = "qa"
-	stage.Type = exec.String
+	stage.Type = e.String
 
-	executor.AddArgument(stage)
+	exec.AddArgument(stage)
 
 	//run always on the server set by stage dynamically
-	//executor.OnServers(func() []string {
-	//	return []string{executor.GetArgument("stage").String()}
+	//exec.OnServers(func() []string {
+	//	return []string{exec.GetArgument("stage").String()}
 	//})
 
-	arg2 := executor.NewArgument("arg2", "Provide the arg2")
+	arg2 := exec.NewArgument("arg2", "Provide the arg2")
 	arg2.Default = "test"
 
-	executor.AddArgument(arg2)
+	exec.AddArgument(arg2)
 
-	executor.Set("env", "prod")
+	exec.Set("env", "prod")
 
-	executor.Set("bin/mysql", "mysql default")
+	exec.Set("bin/mysql", "mysql default")
 
-	executor.Set("test", func() interface{} { return "text" })
+	exec.Set("test", func() interface{} { return "text" })
 
-	executor.Set("functest", F{F: func() interface{} {
+	exec.Set("functest", F{F: func() interface{} {
 		return "date"
 	}})
 
-	executor.Set("localUser", executor.Local("git config --get %s", "user.name"))
+	exec.Set("localUser", exec.Local("git config --get %s", "user.name"))
 
-	executor.
+	exec.
 		Server("prod1", "root@domain.com").
 		AddRole("prod").
 		Set("bin/mysql", "mysql prod")
 
-	executor.
+	exec.
 		Server("prod2", "root@domain.com").
 		AddRole("prod").
 		Set("bin/mysql", "mysql prod")
 
-	executor.
+	exec.
 		Server("qa", "root@domain.com").
 		Key("~/.ssh/id_rsa").
 		AddRole("qa").
 		Set("bin/mysql", "mysql qa")
 
-	executor.
+	exec.
 		Server("stage", "root@domain.com").
 		AddRole("stage")
 
-	opt1 := executor.NewOption("opt1", "test")
-	opt2 := executor.NewOption("opt2", "test")
+	opt1 := exec.NewOption("opt1", "test")
+	opt2 := exec.NewOption("opt2", "test")
 
-	executor.
+	exec.
 		Task("upload", func() {
-			executor.Remote("ls -la /")
-			executor.Upload("test.txt", "~/test.txt")
+			exec.Remote("ls -la /")
+			exec.Upload("test.txt", "~/test.txt")
 		})
 
-	executor.
+	exec.
 		Task("download", func() {
-			executor.Remote("ls -la /")
-			executor.Download("~/test.txt", "test.txt")
+			exec.Remote("ls -la /")
+			exec.Download("~/test.txt", "test.txt")
 		})
 
-	executor.
+	exec.
 		Task("test1", func() {
-			//fmt.Println(executor.TaskContext.GetOption("opt1").ToString())
-			executor.Remote("echo Git user is: " + executor.Get("localUser").String())
-			executor.Remote("ls -la /")
-			fmt.Println(executor.TaskContext.GetArgument("stage"))
-			fmt.Println(executor.TaskContext.GetArgument("arg2"))
+			//fmt.Println(exec.TaskContext.GetOption("opt1").ToString())
+			exec.Remote("echo Git user is: " + exec.Get("localUser").String())
+			exec.Remote("ls -la /")
+			fmt.Println(exec.TaskContext.GetArgument("stage"))
+			fmt.Println(exec.TaskContext.GetArgument("arg2"))
 		}).
 		ShortDescription("Running test1 task").
 		AddOption(opt1)
 
-	executor.
+	exec.
 		Task("test2", func() {
-			executor.Remote("ls -la ~")
+			exec.Remote("ls -la ~")
 		}).
 		ShortDescription("Running test2 task").
 		AddOption(opt2)
 
-	executor.
+	exec.
 		Task("test3", func() {
-			executor.Remote("ls -la ~/.ssh")
+			exec.Remote("ls -la ~/.ssh")
 		}).
 		ShortDescription("Running test3 task")
 
 	//should avoid using RunLocal in a task that will run in a stage with multiple servers associated!
-	executor.
+	exec.
 		Task("local", func() {
-			executor.Local("ls -la ~/Public; ls -la /Users/")
-			executor.Local("docker")
+			exec.Local("ls -la ~/Public; ls -la /Users/")
+			exec.Local("docker")
 		}).
 		Once().
 		ShortDescription("Running local task")
 
-	executor.
+	exec.
 		Task("yarn", func() {
-			executor.Local("yarn")
+			exec.Local("yarn")
 		})
 
-	executor.
+	exec.
 		Task("docker", func() {
-			executor.Local("docker stats")
+			exec.Local("docker stats")
 		})
 
-	executor.
+	exec.
 		Task("docker-remote", func() {
-			executor.Remote("docker")
+			exec.Remote("docker")
 		}).
 		OnServers(func() []string {
 			return []string{"prod1"}
 		})
 
-	executor.
+	exec.
 		Task("get", func() {
-			executor.Remote(fmt.Sprintf("%s", executor.Get("bin/mysql").String()))
-			fmt.Println(executor.TaskContext.GetArgument("stage"))
-			fmt.Println(executor.TaskContext.GetArgument("arg2"))
+			exec.Remote(fmt.Sprintf("%s", exec.Get("bin/mysql").String()))
+			fmt.Println(exec.TaskContext.GetArgument("stage"))
+			fmt.Println(exec.TaskContext.GetArgument("arg2"))
 		}).
 		ShortDescription("Testing get in different servers contexts")
 
-	executor.
+	exec.
 		Task("get2", func() {
-			executor.Remote(fmt.Sprintf("%s", executor.Get("functest").Value().(F).F()))
+			exec.Remote(fmt.Sprintf("%s", exec.Get("functest").Value().(F).F()))
 		}).
 		ShortDescription("Testing get2 in different servers contexts")
 
-	executor.
+	exec.
 		Task("get3", func() {
-			executor.Println(executor.Get("test").String())
+			exec.Println(exec.Get("test").String())
 		}).
 		ShortDescription("Testing get3 in different servers contexts").
 		RemoveArgument("stage")
 
-	executor.
+	exec.
 		TaskGroup("deploy1", "test1", "test2").
 		ShortDescription("Deploy code 1")
 
-	executor.
+	exec.
 		TaskGroup("deploy2", "local", "test3").
 		ShortDescription("Deploy code 2")
 
-	executor.
+	exec.
 		TaskGroup("deploy3", "get").
 		ShortDescription("Deploy code 3")
 
-	executor.
+	exec.
 		Task("onservers:a", func() {
-			executor.RunIfNoBinary("docker", []string{
+			exec.RunIfNoBinary("docker", []string{
 				"echo 'a'",
 				"echo 'b'",
 			})
@@ -183,9 +183,9 @@ func main() {
 			return []string{"prod1", "prod2"}
 		})
 
-	executor.
+	exec.
 		Task("onservers:b", func() {
-			executor.RunIfNoBinary("wget", []string{
+			exec.RunIfNoBinary("wget", []string{
 				"echo 'a'",
 				"echo 'b'",
 			})
@@ -194,34 +194,34 @@ func main() {
 			return []string{"prod1", "prod2"}
 		})
 
-	executor.
+	exec.
 		Task("onservers:c", func() {
-			executor.RunIfNoBinary("docker", []string{
+			exec.RunIfNoBinary("docker", []string{
 				"echo 'a'",
 				"echo 'b'",
 			})
 		}).
 		OnlyOnServers([]string{"prod1"})
 
-	executor.
+	exec.
 		Task("servercontext:host", func() {
-			fmt.Println(executor.ServerContext.Name, executor.ServerContext.GetHost())
+			fmt.Println(exec.ServerContext.Name, exec.ServerContext.GetHost())
 		}).
 		OnServers(func() []string {
 			return []string{"prod1", "prod2"}
 		})
 
-	executor.
+	exec.
 		Task("onservers:read", func() {
-			fmt.Printf("`%s`\n", executor.Remote("git config --get %s", "user.name").String())
+			fmt.Printf("`%s`\n", exec.Remote("git config --get %s", "user.name").String())
 		}).
 		OnServers(func() []string {
 			return []string{"prod1"}
 		})
 
-	executor.
+	exec.
 		Task("ask", func() {
-			response := executor.Ask("How are you?", "better")
+			response := exec.Ask("How are you?", "better")
 
 			color.Yellow("Your response is `%s`", response)
 		}).
@@ -229,13 +229,13 @@ func main() {
 			return []string{"prod1"}
 		})
 
-	executor.
+	exec.
 		Task("ask-confirmation", func() {
-			response := executor.AskWithConfirmation("Would you like to give it a shot?", true)
+			response := exec.AskWithConfirmation("Would you like to give it a shot?", true)
 
 			color.Yellow("Your response is `%t`", response)
 
-			response = executor.AskWithConfirmation("Would you like to give it a shot again?", false)
+			response = exec.AskWithConfirmation("Would you like to give it a shot again?", false)
 
 			color.Yellow("Your response is `%t`", response)
 		}).
@@ -243,9 +243,9 @@ func main() {
 			return []string{"prod1"}
 		})
 
-	executor.
+	exec.
 		Task("ask-choices", func() {
-			response := executor.AskWithChoices("What are your choices?", map[string]interface{}{
+			response := exec.AskWithChoices("What are your choices?", map[string]interface{}{
 				"default": []string{
 					"agent",
 				},
@@ -262,12 +262,12 @@ func main() {
 			return []string{"prod1"}
 		})
 
-	executor.Before("test3", "local")
-	executor.Before("get3", "test3")
-	executor.Before("get3", "local")
-	executor.After("local", "onservers:a")
-	executor.After("local", "get3")
-	executor.After("onservers:a", "local")
+	exec.Before("test3", "local")
+	exec.Before("get3", "test3")
+	exec.Before("get3", "local")
+	exec.After("local", "onservers:a")
+	exec.After("local", "get3")
+	exec.After("onservers:a", "local")
 
-	executor.Init()
+	exec.Init()
 }

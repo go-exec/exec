@@ -8,6 +8,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Task("deploy:writable", func() {
 		dirs := strings.Join(exec.Get("writable_dirs").Slice(), " ")
 		mode := exec.Get("writable_mode").String()

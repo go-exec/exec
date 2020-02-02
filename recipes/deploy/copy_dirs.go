@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Task("deploy:copy_dirs", func() {
 		dirs := exec.Get("copy_dirs").Slice()
 

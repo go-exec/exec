@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Task("rollback", func() {
 		releases := exec.Get("releases_list").Slice()
 

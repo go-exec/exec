@@ -5,17 +5,12 @@ import (
 	"testing"
 )
 
-var e *Exec
-
-func setupTestCase(t *testing.T) func(t *testing.T) {
-	e = New()
-	return func(t *testing.T) {
-		t.Log("teardown test case")
-	}
+func setupTestCase(t *testing.T) (*Exec, func(t *testing.T)) {
+	return New(), func(t *testing.T) {}
 }
 
 func TestNewArgument(t *testing.T) {
-	teardown := setupTestCase(t)
+	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
 	arg := &Argument{
@@ -27,11 +22,11 @@ func TestNewArgument(t *testing.T) {
 		Value:       nil,
 	}
 
-	require.Equal(t, e.NewArgument(arg.Name, arg.Description), arg, "err")
+	require.Equal(t, e.NewArgument(arg.Name, arg.Description), arg)
 }
 
 func TestAddArgument(t *testing.T) {
-	teardown := setupTestCase(t)
+	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
 	arg := &Argument{
@@ -70,7 +65,7 @@ func TestGetArgument(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			teardown := setupTestCase(t)
+			e, teardown := setupTestCase(t)
 
 			if testCase.arg != nil {
 				e.AddArgument(testCase.arg)
@@ -84,7 +79,7 @@ func TestGetArgument(t *testing.T) {
 }
 
 func TestNewOption(t *testing.T) {
-	teardown := setupTestCase(t)
+	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
 	opt := &Option{
@@ -98,7 +93,7 @@ func TestNewOption(t *testing.T) {
 }
 
 func TestAddOption(t *testing.T) {
-	teardown := setupTestCase(t)
+	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
 	opt := &Option{
@@ -136,7 +131,7 @@ func TestGetOption(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			teardown := setupTestCase(t)
+			e, teardown := setupTestCase(t)
 
 			if testCase.opt != nil {
 				e.AddOption(testCase.opt)
@@ -150,7 +145,7 @@ func TestGetOption(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	teardown := setupTestCase(t)
+	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
 	cfg := &config{
@@ -199,7 +194,7 @@ func TestGet(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			teardown := setupTestCase(t)
+			e, teardown := setupTestCase(t)
 
 			if testCase.cfg != nil {
 				e.Set(testCase.cfg.Name, testCase.cfg.value)
@@ -258,7 +253,7 @@ func TestHas(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			teardown := setupTestCase(t)
+			e, teardown := setupTestCase(t)
 
 			if testCase.cfg != nil {
 				e.Set(testCase.cfg.Name, testCase.cfg.value)
@@ -276,7 +271,7 @@ func TestHas(t *testing.T) {
 }
 
 func TestServer(t *testing.T) {
-	teardown := setupTestCase(t)
+	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
 	cfg := &server{

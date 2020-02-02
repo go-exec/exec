@@ -34,6 +34,7 @@ type Exec struct {
 	argumentSequence int
 }
 
+// New returns a new *Exec instance
 func New() *Exec {
 	return &Exec{
 		Configs:        make(map[string]*config),
@@ -47,6 +48,10 @@ func New() *Exec {
 		serverContextF: func() []string { return nil },
 	}
 }
+
+// Instance is the default empty exported instance of *Exec
+// used to be able to create external recipes easily
+var Instance = New()
 
 // Init initializes the exec and executes the current command
 // should be added to the end of all exec declarations
@@ -367,70 +372,6 @@ func (e *Exec) OnServers(f func() []string) {
 	e.serverContextF = f
 }
 
-// remoteRun executes a command on a specific server
-func (e *Exec) remoteRun(command string, server *server) (o Output) {
-	e.ServerContext = server
-	command = e.Parse(command)
-
-	color.Green("[%s] %s %s", server.Name, ">", color.WhiteString("`%s`", command))
-
-	if !server.sshClient.connOpened {
-		err := server.sshClient.Connect(server.Dsn)
-		if err != nil {
-			color.Red("[%s] %s %q", "local", "<", err)
-			o.err = err
-		}
-	}
-
-	if server.sshClient.connOpened {
-		err := server.sshClient.Run(command)
-		if err != nil {
-			o.err = err
-			color.Red("[%s] %s %q", server.Name, "<", err)
-		}
-
-		output := ""
-		buf := make([]byte, 1024)
-
-		n, err := server.sshClient.remoteStdout.Read(buf)
-
-		if err != nil {
-			o.err = err
-		} else {
-			color.Green("[%s] %s\n", server.Name, "<")
-			for _, v := range buf[:n] {
-				fmt.Printf("%c", v)
-			}
-			output = string(buf[:n])
-		}
-		for err == nil {
-			n, err = server.sshClient.remoteStdout.Read(buf)
-			output += string(buf[:n])
-			for _, v := range buf[:n] {
-				fmt.Printf("%c", v)
-			}
-			if err != nil && err != io.EOF {
-				o.err = err
-			}
-		}
-
-		o.text = strings.TrimSpace(output)
-
-		if len(o.text) == 0 {
-			color.Red("[%s] %s\n", server.Name, "<")
-			bytesB, _ := ioutil.ReadAll(server.sshClient.remoteStderr)
-			fmt.Printf("%s\n", strings.TrimSpace(string(bytesB)))
-		}
-
-		err = server.sshClient.Wait()
-		if err != nil {
-			color.Red("[%s] %s %q", server.Name, "<", err)
-		}
-	}
-
-	return o
-}
-
 // Remote runs a command with args, in the ServerContext
 func (e *Exec) Remote(command string, args ...interface{}) (o Output) {
 	run, onServers := e.shouldIRun()
@@ -497,6 +438,70 @@ func (e *Exec) After(task string, tasksAfter ...string) {
 			e.after[task] = append(e.after[task], ta)
 		}
 	}
+}
+
+// remoteRun executes a command on a specific server
+func (e *Exec) remoteRun(command string, server *server) (o Output) {
+	e.ServerContext = server
+	command = e.Parse(command)
+
+	color.Green("[%s] %s %s", server.Name, ">", color.WhiteString("`%s`", command))
+
+	if !server.sshClient.connOpened {
+		err := server.sshClient.Connect(server.Dsn)
+		if err != nil {
+			color.Red("[%s] %s %q", "local", "<", err)
+			o.err = err
+		}
+	}
+
+	if server.sshClient.connOpened {
+		err := server.sshClient.Run(command)
+		if err != nil {
+			o.err = err
+			color.Red("[%s] %s %q", server.Name, "<", err)
+		}
+
+		output := ""
+		buf := make([]byte, 1024)
+
+		n, err := server.sshClient.remoteStdout.Read(buf)
+
+		if err != nil {
+			o.err = err
+		} else {
+			color.Green("[%s] %s\n", server.Name, "<")
+			for _, v := range buf[:n] {
+				fmt.Printf("%c", v)
+			}
+			output = string(buf[:n])
+		}
+		for err == nil {
+			n, err = server.sshClient.remoteStdout.Read(buf)
+			output += string(buf[:n])
+			for _, v := range buf[:n] {
+				fmt.Printf("%c", v)
+			}
+			if err != nil && err != io.EOF {
+				o.err = err
+			}
+		}
+
+		o.text = strings.TrimSpace(output)
+
+		if len(o.text) == 0 {
+			color.Red("[%s] %s\n", server.Name, "<")
+			bytesB, _ := ioutil.ReadAll(server.sshClient.remoteStderr)
+			fmt.Printf("%s\n", strings.TrimSpace(string(bytesB)))
+		}
+
+		err = server.sshClient.Wait()
+		if err != nil {
+			color.Red("[%s] %s %q", server.Name, "<", err)
+		}
+	}
+
+	return o
 }
 
 func (e *Exec) shouldIRun() (run bool, onServers []string) {

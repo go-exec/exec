@@ -8,6 +8,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Task("deploy:shared", func() {
 		sharedPath := "{{deploy_path}}/shared"
 

@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Task("deploy:clear_paths", func() {
 		paths := exec.Get("clear_paths").Slice()
 		sudo := ""

@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Set("http_user", false)
 	exec.Set("http_group", false)
 
