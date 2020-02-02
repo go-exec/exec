@@ -76,7 +76,7 @@ func TestOption_String(t *testing.T) {
         t.Run(testCase.test, func(t *testing.T) {
             if testCase.expectedPanic {
                 require.Panics(t, func() {
-                    testCase.opt.String()
+                    _ = testCase.opt.String()
                 })
             } else {
                 require.Equal(t, *testCase.opt.Value.(*string), testCase.opt.String())
@@ -255,7 +255,7 @@ func TestArgument_String(t *testing.T) {
         t.Run(testCase.test, func(t *testing.T) {
             if testCase.expectedPanic {
                 require.Panics(t, func() {
-                    testCase.arg.String()
+                    _ = testCase.arg.String()
                 })
             } else {
                 require.Equal(t, *testCase.arg.Value.(*string), testCase.arg.String())
