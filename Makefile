@@ -2,6 +2,7 @@ all:
 
 lint-local:
 	@echo "Running linters"
+	golangci-lint cache clean
 	golangci-lint run -v ./...
 
 lint:

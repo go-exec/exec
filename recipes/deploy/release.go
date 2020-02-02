@@ -96,7 +96,7 @@ func init() {
 
 		// Metainfo.
 		// Save metainfo about release.
-		exec.Remote("echo `date +'%Y%m%d%H%M%S'`,{{release_name}} >> .dep/releases")
+		exec.Remote("echo `%s`,{{release_name}} >> .dep/releases", "date +\"%Y%m%d%H%M%S\"")
 
 		// Make new release.
 		exec.Remote(fmt.Sprintf("mkdir %s", releasePath))
