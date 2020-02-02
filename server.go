@@ -6,8 +6,8 @@ type server struct {
 	Name    string
 	Dsn     string
 	Configs map[string]*config
-	key     *string
 
+	key       *string
 	roles     []string
 	sshClient *sshClient
 }
