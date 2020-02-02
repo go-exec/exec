@@ -315,3 +315,85 @@ func TestExec_TaskGroup(t *testing.T) {
 	require.Contains(t, e.TaskGroups, taskGroup.Name)
 	require.Equal(t, e.TaskGroups[taskGroup.Name].task.exec, e)
 }
+
+func TestExec_Before(t *testing.T) {
+	type testCase struct {
+		test   string
+		task   *task
+		before []string
+		unique int
+	}
+
+	testCases := []testCase{
+		{
+			test: "valid",
+			task: &task{
+				Name: "task",
+			},
+			before: []string{"before 1"},
+			unique: 1,
+		},
+		{
+			test: "valid with unique before items",
+			task: &task{
+				Name: "task",
+			},
+			before: []string{"before 1", "before 2", "before 1"},
+			unique: 2,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.test, func(t *testing.T) {
+			e, teardown := setupTestCase(t)
+
+			e.Before(testCase.task.Name, testCase.before...)
+
+			require.Contains(t, e.before, testCase.task.Name)
+			require.Equal(t, len(e.before[testCase.task.Name]), testCase.unique)
+
+			defer teardown(t)
+		})
+	}
+}
+
+func TestExec_After(t *testing.T) {
+	type testCase struct {
+		test   string
+		task   *task
+		after  []string
+		unique int
+	}
+
+	testCases := []testCase{
+		{
+			test: "valid",
+			task: &task{
+				Name: "task",
+			},
+			after:  []string{"after 1"},
+			unique: 1,
+		},
+		{
+			test: "valid with unique after items",
+			task: &task{
+				Name: "task",
+			},
+			after:  []string{"after 1", "after 2", "after 1"},
+			unique: 2,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.test, func(t *testing.T) {
+			e, teardown := setupTestCase(t)
+
+			e.Before(testCase.task.Name, testCase.after...)
+
+			require.Contains(t, e.before, testCase.task.Name)
+			require.Equal(t, len(e.before[testCase.task.Name]), testCase.unique)
+
+			defer teardown(t)
+		})
+	}
+}
