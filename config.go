@@ -18,8 +18,12 @@ func (c *config) Value() interface{} {
 	if v.Kind() == reflect.Func {
 		t := v.Type()
 
-		if t.NumIn() != 0 && t.NumOut() != 1 {
-			panic("Function type must have no input parameters and a single return value")
+		if t.NumIn() != 0 {
+			panic("Function type must have no input parameters")
+		}
+
+		if t.NumOut() != 1 {
+			panic("Function type must have a single return value")
 		}
 
 		if t.Out(0).Kind().String() != "interface" {

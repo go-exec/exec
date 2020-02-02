@@ -9,6 +9,13 @@ func setupTestCase(t *testing.T) (*Exec, func(t *testing.T)) {
 	return New(), func(t *testing.T) {}
 }
 
+func TestNew(t *testing.T) {
+	e, teardown := setupTestCase(t)
+	defer teardown(t)
+
+	require.IsType(t, &Exec{}, e)
+}
+
 func TestExec_NewArgument(t *testing.T) {
 	e, teardown := setupTestCase(t)
 	defer teardown(t)
