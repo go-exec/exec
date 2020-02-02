@@ -9,7 +9,7 @@ func setupTestCase(t *testing.T) (*Exec, func(t *testing.T)) {
 	return New(), func(t *testing.T) {}
 }
 
-func TestNewArgument(t *testing.T) {
+func TestExec_NewArgument(t *testing.T) {
 	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
@@ -25,7 +25,7 @@ func TestNewArgument(t *testing.T) {
 	require.Equal(t, e.NewArgument(arg.Name, arg.Description), arg)
 }
 
-func TestAddArgument(t *testing.T) {
+func TestExec_AddArgument(t *testing.T) {
 	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
@@ -42,7 +42,7 @@ func TestAddArgument(t *testing.T) {
 	require.Equal(t, arg, e.Arguments[arg.Name])
 }
 
-func TestGetArgument(t *testing.T) {
+func TestExec_GetArgument(t *testing.T) {
 	type testCase struct {
 		test string
 		name string
@@ -78,7 +78,7 @@ func TestGetArgument(t *testing.T) {
 	}
 }
 
-func TestNewOption(t *testing.T) {
+func TestExec_NewOption(t *testing.T) {
 	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
@@ -92,7 +92,7 @@ func TestNewOption(t *testing.T) {
 	require.Equal(t, e.NewOption(opt.Name, opt.Description), opt)
 }
 
-func TestAddOption(t *testing.T) {
+func TestExec_AddOption(t *testing.T) {
 	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
@@ -108,7 +108,7 @@ func TestAddOption(t *testing.T) {
 	require.Equal(t, opt, e.Options[opt.Name])
 }
 
-func TestGetOption(t *testing.T) {
+func TestExec_GetOption(t *testing.T) {
 	type testCase struct {
 		test string
 		name string
@@ -144,7 +144,7 @@ func TestGetOption(t *testing.T) {
 	}
 }
 
-func TestSet(t *testing.T) {
+func TestExec_Set(t *testing.T) {
 	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
@@ -157,7 +157,7 @@ func TestSet(t *testing.T) {
 	require.Equal(t, cfg, e.Configs[cfg.Name])
 }
 
-func TestGet(t *testing.T) {
+func TestExec_Get(t *testing.T) {
 	type testCase struct {
 		test      string
 		name      string
@@ -211,7 +211,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestHas(t *testing.T) {
+func TestExec_Has(t *testing.T) {
 	type testCase struct {
 		test           string
 		name           string
@@ -270,7 +270,7 @@ func TestHas(t *testing.T) {
 	}
 }
 
-func TestServer(t *testing.T) {
+func TestExec_Server(t *testing.T) {
 	e, teardown := setupTestCase(t)
 	defer teardown(t)
 
@@ -283,4 +283,35 @@ func TestServer(t *testing.T) {
 	e.Server(cfg.Name, cfg.Dsn)
 
 	require.Equal(t, cfg, e.Servers[cfg.Name])
+}
+
+func TestExec_Task(t *testing.T) {
+	e, teardown := setupTestCase(t)
+	defer teardown(t)
+
+	task := &task{
+		Name:            "task",
+		Arguments:       make(map[string]*Argument),
+		Options:         make(map[string]*Option),
+		exec:            e,
+		removeArguments: make(map[string]string),
+		removeOptions:   make(map[string]string),
+	}
+	e.Task(task.Name, func() {})
+
+	require.Contains(t, e.Tasks, task.Name)
+	require.Equal(t, task.exec, e.Tasks[task.Name].exec)
+}
+
+func TestExec_TaskGroup(t *testing.T) {
+	e, teardown := setupTestCase(t)
+	defer teardown(t)
+
+	taskGroup := &taskGroup{
+		Name: "taskGroup",
+	}
+	e.TaskGroup(taskGroup.Name)
+
+	require.Contains(t, e.TaskGroups, taskGroup.Name)
+	require.Equal(t, e.TaskGroups[taskGroup.Name].task.exec, e)
 }

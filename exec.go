@@ -263,6 +263,7 @@ func (e *Exec) TaskGroup(name string, tasks ...string) *taskGroup {
 			Name:            name,
 			removeArguments: make(map[string]string),
 			removeOptions:   make(map[string]string),
+			exec:            e,
 			run: func() {
 				color.White("➤ Executing task group %s", color.YellowString(name))
 				for _, task := range tasks {
