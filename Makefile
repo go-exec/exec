@@ -12,7 +12,7 @@ lint:
 tests:
 	@echo "Running tests"
 	@mkdir -p artifacts
-	go test -race -cover -coverprofile=artifacts/coverage.out -v ./...
+	go test -race -count=1 -cover -coverprofile=artifacts/coverage.out -v ./...
 
 coverage: tests
 	@echo "Running tests & coverage"

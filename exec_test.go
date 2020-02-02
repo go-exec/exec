@@ -5,7 +5,19 @@ import (
 	"testing"
 )
 
+var e *Exec
+
+func setupTestCase(t *testing.T) func(t *testing.T) {
+	e = New()
+	return func(t *testing.T) {
+		t.Log("teardown test case")
+	}
+}
+
 func TestNewArgument(t *testing.T) {
+	teardown := setupTestCase(t)
+	defer teardown(t)
+
 	arg := &Argument{
 		Name:        "name",
 		Type:        0,
@@ -14,10 +26,14 @@ func TestNewArgument(t *testing.T) {
 		Description: "description",
 		Value:       nil,
 	}
-	require.Equal(t, NewArgument(arg.Name, arg.Description), arg)
+
+	require.Equal(t, e.NewArgument(arg.Name, arg.Description), arg, "err")
 }
 
 func TestAddArgument(t *testing.T) {
+	teardown := setupTestCase(t)
+	defer teardown(t)
+
 	arg := &Argument{
 		Name:        "test",
 		Type:        0,
@@ -26,9 +42,9 @@ func TestAddArgument(t *testing.T) {
 		Description: "",
 		Value:       nil,
 	}
-	AddArgument(arg)
+	e.AddArgument(arg)
 
-	require.Equal(t, arg, Arguments[arg.Name])
+	require.Equal(t, arg, e.Arguments[arg.Name])
 }
 
 func TestGetArgument(t *testing.T) {
@@ -54,16 +70,23 @@ func TestGetArgument(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
+			teardown := setupTestCase(t)
+
 			if testCase.arg != nil {
-				AddArgument(testCase.arg)
+				e.AddArgument(testCase.arg)
 			}
 
-			require.Equal(t, GetArgument(testCase.name), testCase.arg)
+			require.Equal(t, e.GetArgument(testCase.name), testCase.arg)
+
+			teardown(t)
 		})
 	}
 }
 
 func TestNewOption(t *testing.T) {
+	teardown := setupTestCase(t)
+	defer teardown(t)
+
 	opt := &Option{
 		Name:        "name",
 		Type:        0,
@@ -71,10 +94,13 @@ func TestNewOption(t *testing.T) {
 		Description: "description",
 		Value:       nil,
 	}
-	require.Equal(t, NewOption(opt.Name, opt.Description), opt)
+	require.Equal(t, e.NewOption(opt.Name, opt.Description), opt)
 }
 
 func TestAddOption(t *testing.T) {
+	teardown := setupTestCase(t)
+	defer teardown(t)
+
 	opt := &Option{
 		Name:        "name",
 		Type:        0,
@@ -82,9 +108,9 @@ func TestAddOption(t *testing.T) {
 		Description: "description",
 		Value:       nil,
 	}
-	AddOption(opt)
+	e.AddOption(opt)
 
-	require.Equal(t, opt, Options[opt.Name])
+	require.Equal(t, opt, e.Options[opt.Name])
 }
 
 func TestGetOption(t *testing.T) {
@@ -110,23 +136,30 @@ func TestGetOption(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
+			teardown := setupTestCase(t)
+
 			if testCase.opt != nil {
-				AddOption(testCase.opt)
+				e.AddOption(testCase.opt)
 			}
 
-			require.Equal(t, GetOption(testCase.name), testCase.opt)
+			require.Equal(t, e.GetOption(testCase.name), testCase.opt)
+
+			teardown(t)
 		})
 	}
 }
 
 func TestSet(t *testing.T) {
+	teardown := setupTestCase(t)
+	defer teardown(t)
+
 	cfg := &config{
 		Name:  "cfg",
 		value: "val",
 	}
-	Set(cfg.Name, cfg.value)
+	e.Set(cfg.Name, cfg.value)
 
-	require.Equal(t, cfg, Configs[cfg.Name])
+	require.Equal(t, cfg, e.Configs[cfg.Name])
 }
 
 func TestGet(t *testing.T) {
@@ -166,26 +199,30 @@ func TestGet(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
+			teardown := setupTestCase(t)
+
 			if testCase.cfg != nil {
-				Set(testCase.cfg.Name, testCase.cfg.value)
+				e.Set(testCase.cfg.Name, testCase.cfg.value)
 			}
 
 			if testCase.serverCtx != nil {
-				ServerContext = testCase.serverCtx
+				e.ServerContext = testCase.serverCtx
 			}
 
-			require.Equal(t, Get(testCase.name), testCase.cfg)
+			require.Equal(t, e.Get(testCase.name), testCase.cfg)
+
+			teardown(t)
 		})
 	}
 }
 
 func TestHas(t *testing.T) {
 	type testCase struct {
-		test      string
-		name      string
-		cfg       *config
-		serverCtx *server
-		expectedResult  bool
+		test           string
+		name           string
+		cfg            *config
+		serverCtx      *server
+		expectedResult bool
 	}
 
 	testCases := []testCase{
@@ -198,8 +235,8 @@ func TestHas(t *testing.T) {
 			expectedResult: true,
 		},
 		{
-			test: "invalid cfg",
-			name: "invalid",
+			test:           "invalid cfg",
+			name:           "invalid",
 			expectedResult: false,
 		},
 		{
@@ -208,28 +245,47 @@ func TestHas(t *testing.T) {
 			cfg: &config{
 				Name: "valid",
 			},
-			serverCtx: &server{},
+			serverCtx:      &server{},
 			expectedResult: true,
 		},
 		{
-			test:      "invalid cfg in server ctx",
-			name:      "invalid",
-			serverCtx: &server{},
+			test:           "invalid cfg in server ctx",
+			name:           "invalid",
+			serverCtx:      &server{},
 			expectedResult: false,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
+			teardown := setupTestCase(t)
+
 			if testCase.cfg != nil {
-				Set(testCase.cfg.Name, testCase.cfg.value)
+				e.Set(testCase.cfg.Name, testCase.cfg.value)
 			}
 
 			if testCase.serverCtx != nil {
-				ServerContext = testCase.serverCtx
+				e.ServerContext = testCase.serverCtx
 			}
 
-			require.Equal(t, Has(testCase.name), testCase.expectedResult)
+			require.Equal(t, e.Has(testCase.name), testCase.expectedResult)
+
+			teardown(t)
 		})
 	}
+}
+
+func TestServer(t *testing.T) {
+	teardown := setupTestCase(t)
+	defer teardown(t)
+
+	cfg := &server{
+		Name:      "server",
+		Dsn:       "user@host:port",
+		Configs:   make(map[string]*config),
+		sshClient: &sshClient{},
+	}
+	e.Server(cfg.Name, cfg.Dsn)
+
+	require.Equal(t, cfg, e.Servers[cfg.Name])
 }

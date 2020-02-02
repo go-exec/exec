@@ -19,6 +19,7 @@ type task struct {
 	Options   map[string]*Option
 	Arguments map[string]*Argument
 
+	exec             *Exec
 	run              taskFunction
 	subtasks         map[string]*task
 	shortDescription string
@@ -216,7 +217,7 @@ func (t *task) execute(taskName string, cmdArgs []string) error {
 	}
 
 	// Executing the onStart task
-	onStart()
+	t.exec.onStart()
 
 	if len(t.before) > 0 {
 		for _, tb := range t.before {
@@ -234,7 +235,7 @@ func (t *task) execute(taskName string, cmdArgs []string) error {
 	}
 
 	// Executing the onEnd task
-	onEnd()
+	t.exec.onEnd()
 
 	// Execute it only once if requested
 	if t.once && !t.executedOnce {

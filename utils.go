@@ -16,27 +16,27 @@ import (
 )
 
 // Cd is a remote helper function that runs a `cd` before a command
-func Cd(path string) {
-	command := "cd " + Parse(path)
-	color.Green("[%s] %s %s", ServerContext.Name, color.GreenString(">"), command)
-	ServerContext.sshClient.env = command + "; "
+func (e *Exec) Cd(path string) {
+	command := "cd " + e.Parse(path)
+	color.Green("[%s] %s %s", e.ServerContext.Name, color.GreenString(">"), command)
+	e.ServerContext.sshClient.env = command + "; "
 }
 
 // CommandExist checks if a remote command exists on server
-func CommandExist(command string) bool {
-	return Remote("if hash %s 2>/dev/null; then echo 'true'; fi", command).Bool()
+func (e *Exec) CommandExist(command string) bool {
+	return e.Remote("if hash %s 2>/dev/null; then echo 'true'; fi", command).Bool()
 }
 
 // Parse parses {{var}} with Get(var)
-func Parse(text string) string {
+func (e *Exec) Parse(text string) string {
 	re := regexp.MustCompile(`\{\{\s*([\w\.\/]+)\s*\}\}`)
 	if !re.MatchString(text) {
 		return text
 	}
 	return re.ReplaceAllStringFunc(text, func(str string) string {
 		name := strings.TrimSuffix(strings.TrimPrefix(str, "{{"), "}}")
-		if Has(name) {
-			return Parse(Get(name).String())
+		if e.Has(name) {
+			return e.Parse(e.Get(name).String())
 		}
 		return str
 	})
@@ -44,39 +44,39 @@ func Parse(text string) string {
 
 // RunIfNoBinary runs a remote command if a binary is not found
 // command can be an array of string commands or one a string command
-func RunIfNoBinary(binary string, command interface{}) (o output) {
-	return Remote("if [ ! -e \"`which %s`\" ]; then %s; fi", binary, commandToString(command))
+func (e *Exec) RunIfNoBinary(binary string, command interface{}) (o Output) {
+	return e.Remote("if [ ! -e \"`which %s`\" ]; then %s; fi", binary, commandToString(command))
 }
 
 // RunIfNoBinaries runs multiple RunIfNoBinary
-func RunIfNoBinaries(config map[string]interface{}) {
+func (e *Exec) RunIfNoBinaries(config map[string]interface{}) {
 	for binary, command := range config {
-		RunIfNoBinary(binary, command)
+		e.RunIfNoBinary(binary, command)
 	}
 }
 
 // RunIf runs a remote command if condition is true
 // command can be an array of string commands or one a string command
-func RunIf(condition string, command interface{}) (o output) {
-	return Remote("if %s; then %s; fi", condition, commandToString(command))
+func (e *Exec) RunIf(condition string, command interface{}) (o Output) {
+	return e.Remote("if %s; then %s; fi", condition, commandToString(command))
 }
 
 // RunIfs runs multiple RunIf
-func RunIfs(config map[string]interface{}) {
+func (e *Exec) RunIfs(config map[string]interface{}) {
 	for condition, command := range config {
-		RunIf(condition, command)
+		e.RunIf(condition, command)
 	}
 }
 
 // UploadFileSudo uploads a local file to a remote file with sudo
-func UploadFileSudo(source, destination string) {
+func (e *Exec) UploadFileSudo(source, destination string) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
-	Upload(source, tempFile)
-	Remote("sudo mv %s %s", tempFile, destination)
+	e.Upload(source, tempFile)
+	e.Remote("sudo mv %s %s", tempFile, destination)
 }
 
 // UploadTemplateFileSudo parses a local template file with context, and uploads it to a remote file with sudo
-func UploadTemplateFileSudo(source, destination string, context interface{}) {
+func (e *Exec) UploadTemplateFileSudo(source, destination string, context interface{}) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
 
 	t, err := template.New(path.Base(source)).ParseFiles(source)
@@ -91,26 +91,26 @@ func UploadTemplateFileSudo(source, destination string, context interface{}) {
 	if err := ioutil.WriteFile(tempFile, tpl.Bytes(), os.FileMode(0644)); err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
-		Upload(tempFile, tempFile)
-		Local("rm %s", tempFile)
-		Remote("sudo mv %s %s", tempFile, destination)
+		e.Upload(tempFile, tempFile)
+		e.Local("rm %s", tempFile)
+		e.Remote("sudo mv %s %s", tempFile, destination)
 	}
 }
 
 // UploadTemplateStringSudo uploads a string content to a remote file with sudo
-func UploadTemplateStringSudo(content, destination string) {
+func (e *Exec) UploadTemplateStringSudo(content, destination string) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
 	if err := ioutil.WriteFile(tempFile, []byte(content), os.FileMode(0644)); err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
-		Upload(tempFile, tempFile)
-		Local("rm %s", tempFile)
-		Remote("sudo mv %s %s", tempFile, destination)
+		e.Upload(tempFile, tempFile)
+		e.Local("rm %s", tempFile)
+		e.Remote("sudo mv %s %s", tempFile, destination)
 	}
 }
 
 // LocalTemplateFile parses a local template file with context, and moves it to a destination
-func LocalTemplateFile(source, destination string, context interface{}) {
+func (e *Exec) LocalTemplateFile(source, destination string, context interface{}) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
 
 	t, err := template.New(path.Base(source)).ParseFiles(source)
@@ -125,12 +125,12 @@ func LocalTemplateFile(source, destination string, context interface{}) {
 	if err := ioutil.WriteFile(tempFile, tpl.Bytes(), os.FileMode(0644)); err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
-		Local("mv %s %s", tempFile, destination)
+		e.Local("mv %s %s", tempFile, destination)
 	}
 }
 
 // CompileLocalTemplateFile parses a local source file template with context and returns it
-func CompileLocalTemplateFile(source string, context interface{}) string {
+func (e *Exec) CompileLocalTemplateFile(source string, context interface{}) string {
 	t, err := template.New(path.Base(source)).ParseFiles(source)
 	if err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
@@ -143,7 +143,7 @@ func CompileLocalTemplateFile(source string, context interface{}) string {
 }
 
 // CompileLocalTemplateString parses a local source string template with context and returns it
-func CompileLocalTemplateString(source string, context interface{}) string {
+func (e *Exec) CompileLocalTemplateString(source string, context interface{}) string {
 	t, err := template.New(uuid.NewV4().String()).Parse(source)
 	if err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
@@ -156,71 +156,71 @@ func CompileLocalTemplateString(source string, context interface{}) string {
 }
 
 // ReplaceInRemoteFile replaces a search string with a replace string, in a remote file
-func ReplaceInRemoteFile(file, search, replace string) {
+func (e *Exec) ReplaceInRemoteFile(file, search, replace string) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
-	Remote("sudo cp %s %s ; sudo chown %s %s", file, tempFile, ServerContext.GetUser(), tempFile)
-	Download(tempFile, tempFile)
+	e.Remote("sudo cp %s %s ; sudo chown %s %s", file, tempFile, e.ServerContext.GetUser(), tempFile)
+	e.Download(tempFile, tempFile)
 	if tempFileContent, err := ioutil.ReadFile(tempFile); err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
-		tempFileContent := strings.Replace(string(tempFileContent), search, Parse(replace), -1)
+		tempFileContent := strings.Replace(string(tempFileContent), search, e.Parse(replace), -1)
 		if err := ioutil.WriteFile(tempFile, []byte(tempFileContent), os.FileMode(0644)); err != nil {
 			color.Red("[%s] %s %s", "local", "<", err)
 		} else {
-			UploadFileSudo(tempFile, file)
-			Remote("sudo rm -rf %s", tempFile)
-			Local("rm -rf %s", tempFile)
+			e.UploadFileSudo(tempFile, file)
+			e.Remote("sudo rm -rf %s", tempFile)
+			e.Local("rm -rf %s", tempFile)
 		}
 	}
 }
 
 // AddInRemoteFile appends a text string to a remote file
-func AddInRemoteFile(text, file string) {
+func (e *Exec) AddInRemoteFile(text, file string) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
-	Remote("sudo cp %s %s ; sudo chown %s %s", file, tempFile, ServerContext.GetUser(), tempFile)
-	Download(tempFile, tempFile)
+	e.Remote("sudo cp %s %s ; sudo chown %s %s", file, tempFile, e.ServerContext.GetUser(), tempFile)
+	e.Download(tempFile, tempFile)
 	if tempFileContent, err := ioutil.ReadFile(tempFile); err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
-		tempFileContent := string(tempFileContent) + Parse(text)
+		tempFileContent := string(tempFileContent) + e.Parse(text)
 		if err := ioutil.WriteFile(tempFile, []byte(tempFileContent), os.FileMode(0644)); err != nil {
 			color.Red("[%s] %s %s", "local", "<", err)
 		} else {
-			UploadFileSudo(tempFile, file)
-			Remote("sudo rm -rf %s", tempFile)
-			Local("rm -rf %s", tempFile)
+			e.UploadFileSudo(tempFile, file)
+			e.Remote("sudo rm -rf %s", tempFile)
+			e.Local("rm -rf %s", tempFile)
 		}
 	}
 }
 
 // RemoveFromRemoteFile cuts out a text string from remote file
-func RemoveFromRemoteFile(text, file string) {
+func (e *Exec) RemoveFromRemoteFile(text, file string) {
 	tempFile := "/tmp/" + uuid.NewV4().String()
-	Remote("sudo cp %s %s ; sudo chown %s %s", file, tempFile, ServerContext.GetUser(), tempFile)
-	Download(tempFile, tempFile)
+	e.Remote("sudo cp %s %s ; sudo chown %s %s", file, tempFile, e.ServerContext.GetUser(), tempFile)
+	e.Download(tempFile, tempFile)
 	if tempFileContent, err := ioutil.ReadFile(tempFile); err != nil {
 		color.Red("[%s] %s %s", "local", "<", err)
 	} else {
-		tempFileContent := strings.Replace(string(tempFileContent), Parse(text), "", -1)
+		tempFileContent := strings.Replace(string(tempFileContent), e.Parse(text), "", -1)
 		if err := ioutil.WriteFile(tempFile, []byte(tempFileContent), os.FileMode(0644)); err != nil {
 			color.Red("[%s] %s %s", "local", "<", err)
 		} else {
-			UploadFileSudo(tempFile, file)
-			Remote("sudo rm -rf %s", tempFile)
-			Local("rm -rf %s", tempFile)
+			e.UploadFileSudo(tempFile, file)
+			e.Remote("sudo rm -rf %s", tempFile)
+			e.Local("rm -rf %s", tempFile)
 		}
 	}
 }
 
 // IsInRemoteFile return true if text is found in a remote file
-func IsInRemoteFile(text, file string) bool {
+func (e *Exec) IsInRemoteFile(text, file string) bool {
 	text = strings.Trim(text, " ")
-	return Remote("if [ \"`sudo cat %s | grep '%s'`\" ]; then echo 'true'; fi", file, text).Bool()
+	return e.Remote("if [ \"`sudo cat %s | grep '%s'`\" ]; then echo 'true'; fi", file, text).Bool()
 }
 
 // Ask asks a question and waits for an answer
 // first item from attributes is set as default value, which is optional
-func Ask(question string, attributes ...string) string {
+func (e *Exec) Ask(question string, attributes ...string) string {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	var defaultResponse string
@@ -243,7 +243,7 @@ func Ask(question string, attributes ...string) string {
 
 // AskWithConfirmation asks a confirmation question and waits for an y/n answer
 // first item from attributes is set as default value, which is optional
-func AskWithConfirmation(question string, attributes ...bool) bool {
+func (e *Exec) AskWithConfirmation(question string, attributes ...bool) bool {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	var defaultResponse bool
@@ -290,7 +290,7 @@ First item from attributes must be a map with default and choices keys and strin
 			}
     ```
 */
-func AskWithChoices(question string, attributes ...map[string]interface{}) (responses []string) {
+func (e *Exec) AskWithChoices(question string, attributes ...map[string]interface{}) (responses []string) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	var (
