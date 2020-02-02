@@ -40,5 +40,5 @@ func main() {
 		return []string{exec.GetArgument("stage").String()}
 	})
 
-	exec.Init()
+	exec.Run()
 }

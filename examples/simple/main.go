@@ -18,7 +18,7 @@ func main() {
 	}).Private()
 
 	exec.Task("onEnd", func() {
-		exec.Println(fmt.Sprintf("Finished in %s!`", time.Now().Sub(exec.Get("startTime").Time()).String()))
+		exec.Println(fmt.Sprintf("Finished in %s!", time.Since(exec.Get("startTime").Time()).String()))
 	}).Private()
 
 	type F struct {
@@ -269,5 +269,5 @@ func main() {
 	exec.After("local", "get3")
 	exec.After("onservers:a", "local")
 
-	exec.Init()
+	exec.Run()
 }

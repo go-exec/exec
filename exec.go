@@ -53,9 +53,9 @@ func New() *Exec {
 // used to be able to create external recipes easily
 var Instance = New()
 
-// Init initializes the exec and executes the current command
+// Run initializes the exec and executes the current command
 // should be added to the end of all exec declarations
-func (e *Exec) Init() {
+func (e *Exec) Run() {
 	subtasks := make(map[string]*task)
 
 	for name, task := range e.Tasks {
