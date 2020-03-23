@@ -112,6 +112,14 @@ func (c *sshClient) initAuthMethod() {
 // SSHDialFunc can dial an ssh server and return a client
 type sshDialFunc func(net, addr string, config *ssh.ClientConfig) (*ssh.Client, error)
 
+// WithConnection associate an existing connection
+func (c *sshClient) WithConnection(conn *ssh.Client) {
+	if conn != nil {
+		c.conn = conn
+		c.connOpened = true
+	}
+}
+
 // Connect creates SSH connection to a specified host.
 // It expects the host of the form "[ssh://]host[:port]".
 func (c *sshClient) Connect(host string) error {

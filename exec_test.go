@@ -1,24 +1,19 @@
 package exec
 
 import (
+	"github.com/go-exec/exec/ssh_mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func setupTestCase(t *testing.T) (*Exec, func(t *testing.T)) {
-	return New(), func(t *testing.T) {}
-}
-
 func TestNew(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	require.IsType(t, &Exec{}, e)
 }
 
 func TestExec_NewArgument(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	arg := &Argument{
 		Name:        "name",
@@ -33,8 +28,7 @@ func TestExec_NewArgument(t *testing.T) {
 }
 
 func TestExec_AddArgument(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	arg := &Argument{
 		Name:        "test",
@@ -72,22 +66,19 @@ func TestExec_GetArgument(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			e, teardown := setupTestCase(t)
+			e := New()
 
 			if testCase.arg != nil {
 				e.AddArgument(testCase.arg)
 			}
 
 			require.Equal(t, e.GetArgument(testCase.name), testCase.arg)
-
-			teardown(t)
 		})
 	}
 }
 
 func TestExec_NewOption(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	opt := &Option{
 		Name:        "name",
@@ -100,8 +91,7 @@ func TestExec_NewOption(t *testing.T) {
 }
 
 func TestExec_AddOption(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	opt := &Option{
 		Name:        "name",
@@ -138,22 +128,19 @@ func TestExec_GetOption(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			e, teardown := setupTestCase(t)
+			e := New()
 
 			if testCase.opt != nil {
 				e.AddOption(testCase.opt)
 			}
 
 			require.Equal(t, e.GetOption(testCase.name), testCase.opt)
-
-			teardown(t)
 		})
 	}
 }
 
 func TestExec_Set(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	cfg := &config{
 		Name:  "cfg",
@@ -201,7 +188,7 @@ func TestExec_Get(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			e, teardown := setupTestCase(t)
+			e := New()
 
 			if testCase.cfg != nil {
 				e.Set(testCase.cfg.Name, testCase.cfg.value)
@@ -212,8 +199,6 @@ func TestExec_Get(t *testing.T) {
 			}
 
 			require.Equal(t, e.Get(testCase.name), testCase.cfg)
-
-			teardown(t)
 		})
 	}
 }
@@ -260,7 +245,7 @@ func TestExec_Has(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			e, teardown := setupTestCase(t)
+			e := New()
 
 			if testCase.cfg != nil {
 				e.Set(testCase.cfg.Name, testCase.cfg.value)
@@ -271,15 +256,12 @@ func TestExec_Has(t *testing.T) {
 			}
 
 			require.Equal(t, e.Has(testCase.name), testCase.expectedResult)
-
-			teardown(t)
 		})
 	}
 }
 
 func TestExec_Server(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	cfg := &server{
 		Name:      "server",
@@ -293,8 +275,7 @@ func TestExec_Server(t *testing.T) {
 }
 
 func TestExec_Task(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	task := &task{
 		Name:            "task",
@@ -311,8 +292,7 @@ func TestExec_Task(t *testing.T) {
 }
 
 func TestExec_TaskGroup(t *testing.T) {
-	e, teardown := setupTestCase(t)
-	defer teardown(t)
+	e := New()
 
 	taskGroup := &taskGroup{
 		Name: "taskGroup",
@@ -352,14 +332,12 @@ func TestExec_Before(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			e, teardown := setupTestCase(t)
+			e := New()
 
 			e.Before(testCase.task.Name, testCase.before...)
 
 			require.Contains(t, e.before, testCase.task.Name)
 			require.Equal(t, len(e.before[testCase.task.Name]), testCase.unique)
-
-			defer teardown(t)
 		})
 	}
 }
@@ -393,14 +371,54 @@ func TestExec_After(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.test, func(t *testing.T) {
-			e, teardown := setupTestCase(t)
+			e := New()
 
 			e.Before(testCase.task.Name, testCase.after...)
 
 			require.Contains(t, e.before, testCase.task.Name)
 			require.Equal(t, len(e.before[testCase.task.Name]), testCase.unique)
+		})
+	}
+}
 
-			defer teardown(t)
+func TestExec_Remote(t *testing.T) {
+	type args struct {
+		command string
+		args    []interface{}
+	}
+	tests := []struct {
+		name  string
+		args  args
+		wantO Output
+	}{
+		{
+			name: "test",
+			args: args{
+				command: `echo hello`,
+			},
+			wantO: Output{
+				text: "hello",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := ssh_mock.NewServer(t)
+			defer server.Shutdown()
+			conn := server.Dial(ssh_mock.ClientConfig())
+			defer conn.Close()
+
+			e := New()
+
+			s := e.Server("mock", "")
+
+			s.sshClient.WithConnection(conn)
+
+			e.ServerContext = s
+
+			gotO := e.Remote(tt.args.command, tt.args.args...)
+
+			require.Equal(t, tt.wantO, gotO, "Remote() = %v, want %v", gotO, tt.wantO)
 		})
 	}
 }
