@@ -386,13 +386,13 @@ func TestExec_Remote(t *testing.T) {
 		command string
 		args    []interface{}
 	}
-	tests := []struct {
+	testCases := []struct {
 		name  string
 		args  args
 		wantO Output
 	}{
 		{
-			name: "test",
+			name: "echo remote test",
 			args: args{
 				command: `echo hello`,
 			},
@@ -401,8 +401,8 @@ func TestExec_Remote(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 			server := ssh_mock.NewServer(t)
 			defer server.Shutdown()
 			conn := server.Dial(ssh_mock.ClientConfig())
@@ -416,9 +416,40 @@ func TestExec_Remote(t *testing.T) {
 
 			e.ServerContext = s
 
-			gotO := e.Remote(tt.args.command, tt.args.args...)
+			gotO := e.Remote(testCase.args.command, testCase.args.args...)
 
-			require.Equal(t, tt.wantO, gotO, "Remote() = %v, want %v", gotO, tt.wantO)
+			require.Equal(t, testCase.wantO, gotO, "Remote() = %v, want %v", gotO, testCase.wantO)
+		})
+	}
+}
+
+func TestExec_Local(t *testing.T) {
+	type args struct {
+		command string
+		args    []interface{}
+	}
+	testCases := []struct {
+		name  string
+		args  args
+		wantO Output
+	}{
+		{
+			name: "echo local test",
+			args: args{
+				command: `echo hello`,
+			},
+			wantO: Output{
+				text: "hello",
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			e := New()
+
+			gotO := e.Local(testCase.args.command, testCase.args.args...)
+
+			require.Equal(t, testCase.wantO, gotO, "Remote() = %v, want %v", gotO, testCase.wantO)
 		})
 	}
 }
