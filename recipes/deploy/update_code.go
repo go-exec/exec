@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Task("deploy:update_code", func() {
 		repository := exec.Get("repository").String()
 		branch := exec.Get("branch").String()

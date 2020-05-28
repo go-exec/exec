@@ -3,6 +3,7 @@ package deploy
 import "github.com/go-exec/exec"
 
 func init() {
+	exec := exec.Instance
 	exec.Task("deploy:prepare", func() {
 		exec.Remote("if [ ! -d {{deploy_path}} ]; then mkdir -p {{deploy_path}}; fi")
 

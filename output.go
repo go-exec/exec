@@ -5,24 +5,20 @@ import (
 	"strings"
 )
 
-type output struct {
+type Output struct {
 	text string
 	err  error
 }
 
-func (o output) HasError() bool {
-	if o.err != nil {
-		return true
-	}
-
-	return false
+func (o Output) HasError() bool {
+	return o.err != nil
 }
 
-func (o output) String() string {
+func (o Output) String() string {
 	return o.text
 }
 
-func (o output) Int() int {
+func (o Output) Int() int {
 	i, err := strconv.Atoi(o.text)
 	if err == nil {
 		return i
@@ -30,14 +26,10 @@ func (o output) Int() int {
 	return 0
 }
 
-func (o output) Bool() bool {
-	if "true" == o.text {
-		return true
-	}
-
-	return false
+func (o Output) Bool() bool {
+	return "true" == o.text
 }
 
-func (o output) Slice(sep string) []string {
+func (o Output) Slice(sep string) []string {
 	return strings.Split(o.text, sep)
 }

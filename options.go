@@ -73,7 +73,7 @@ func (arg Argument) Explain() string {
 
 // String casts a value to a string and panics on failure.
 func (arg Argument) String() string {
-	return arg.Value.(string)
+	return *arg.Value.(*string)
 }
 
 // Bool casts a value to a bool and panics on failure.

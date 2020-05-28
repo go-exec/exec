@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/go-exec/exec"
+	e "github.com/go-exec/exec"
 	"time"
 )
 
@@ -11,12 +11,15 @@ import (
 Example with general setup of tasks
 */
 func main() {
+	exec := e.Instance
+	defer exec.Run()
+
 	exec.Task("onStart", func() {
 		exec.Set("startTime", time.Now())
 	}).Private()
 
 	exec.Task("onEnd", func() {
-		exec.Println(fmt.Sprintf("Finished in %s!`", time.Now().Sub(exec.Get("startTime").Time()).String()))
+		exec.Println(fmt.Sprintf("Finished in %s!", time.Since(exec.Get("startTime").Time()).String()))
 	}).Private()
 
 	type F struct {
@@ -25,7 +28,7 @@ func main() {
 
 	stage := exec.NewArgument("stage", "Provide the running stage")
 	stage.Default = "qa"
-	stage.Type = exec.String
+	stage.Type = e.String
 
 	exec.AddArgument(stage)
 
@@ -78,12 +81,18 @@ func main() {
 		Task("upload", func() {
 			exec.Remote("ls -la /")
 			exec.Upload("test.txt", "~/test.txt")
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
 		})
 
 	exec.
 		Task("download", func() {
 			exec.Remote("ls -la /")
 			exec.Download("~/test.txt", "test.txt")
+		}).
+		OnServers(func() []string {
+			return []string{"prod1"}
 		})
 
 	exec.
@@ -266,6 +275,4 @@ func main() {
 	exec.After("local", "onservers:a")
 	exec.After("local", "get3")
 	exec.After("onservers:a", "local")
-
-	exec.Init()
 }

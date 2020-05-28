@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+	exec := exec.Instance
 	exec.Task("rollback", func() {
 		releases := exec.Get("releases_list").Slice()
 
@@ -19,5 +20,4 @@ func init() {
 			exec.Println(fmt.Sprintf("Rollback to `%s` release was successful.", releases[1]))
 		}
 	}).ShortDescription("Rollback to previous release")
-
 }

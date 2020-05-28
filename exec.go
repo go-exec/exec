@@ -10,63 +10,82 @@ import (
 	"strings"
 )
 
-var (
+type Exec struct {
 	// Configs contains all exec context vars used by Get and Set
-	Configs = make(map[string]*config)
+	Configs map[string]*config
 	// Tasks contains all exec tasks
-	Tasks = make(map[string]*task)
+	Tasks map[string]*task
 	// Servers contains all exec servers
-	Servers = make(map[string]*server)
+	Servers map[string]*server
 	// TaskGroups contains all exec task groups
-	TaskGroups = make(map[string]*taskGroup)
+	TaskGroups map[string]*taskGroup
 	// Arguments contains all exec arguments
-	Arguments = make(map[string]*Argument)
+	Arguments map[string]*Argument
 	// Options contains all exec options
-	Options = make(map[string]*Option)
+	Options map[string]*Option
 	// ServerContext is the current active server
 	ServerContext *server
 	// TaskContext is the current executed task
 	TaskContext *task
 
-	before           = make(map[string][]string)
-	after            = make(map[string][]string)
-	serverContextF   = func() []string { return nil } //must return one server name
+	before           map[string][]string
+	after            map[string][]string
+	serverContextF   func() []string //must return one server name
 	argumentSequence int
-)
+}
 
-// Init initializes the exec and executes the current command
+// New returns a new *Exec instance
+func New() *Exec {
+	return &Exec{
+		Configs:        make(map[string]*config),
+		Tasks:          make(map[string]*task),
+		Servers:        make(map[string]*server),
+		TaskGroups:     make(map[string]*taskGroup),
+		Arguments:      make(map[string]*Argument),
+		Options:        make(map[string]*Option),
+		before:         make(map[string][]string),
+		after:          make(map[string][]string),
+		serverContextF: func() []string { return nil },
+	}
+}
+
+// Instance is the default empty exported instance of *Exec
+// used to be able to create external recipes easily
+var Instance = New()
+
+// Run initializes the exec and executes the current command
 // should be added to the end of all exec declarations
-func Init() {
+func (e *Exec) Run() {
 	subtasks := make(map[string]*task)
 
-	for name, task := range Tasks {
-		task.Arguments = mergeArguments(task.removeArguments, Arguments, task.Arguments)
-		task.Options = mergeOptions(task.removeOptions, Options, task.Options)
+	for name, task := range e.Tasks {
+		task.Arguments = mergeArguments(task.removeArguments, e.Arguments, task.Arguments)
+		task.Options = mergeOptions(task.removeOptions, e.Options, task.Options)
 
 		if !task.private {
 			subtasks[name] = task
 		}
 	}
 
-	for name := range TaskGroups {
-		TaskGroups[name].task.Arguments = mergeArguments(TaskGroups[name].task.removeArguments, Arguments, TaskGroups[name].task.Arguments)
-		TaskGroups[name].task.Options = mergeOptions(TaskGroups[name].task.removeOptions, Options, TaskGroups[name].task.Options)
-		Tasks[name] = TaskGroups[name].task
-		subtasks[name] = TaskGroups[name].task
+	for name := range e.TaskGroups {
+		e.TaskGroups[name].task.Arguments = mergeArguments(e.TaskGroups[name].task.removeArguments, e.Arguments, e.TaskGroups[name].task.Arguments)
+		e.TaskGroups[name].task.Options = mergeOptions(e.TaskGroups[name].task.removeOptions, e.Options, e.TaskGroups[name].task.Options)
+		e.Tasks[name] = e.TaskGroups[name].task
+		subtasks[name] = e.TaskGroups[name].task
 	}
 
-	for _, task := range Tasks {
-		if before[task.Name] != nil {
-			for _, bt := range before[task.Name] {
-				if Tasks[bt] != nil {
-					task.before = append(task.before, Tasks[bt])
+	for _, task := range e.Tasks {
+		if e.before[task.Name] != nil {
+			for _, bt := range e.before[task.Name] {
+				if e.Tasks[bt] != nil {
+					task.before = append(task.before, e.Tasks[bt])
 				}
 			}
 		}
-		if after[task.Name] != nil {
-			for _, at := range after[task.Name] {
-				if Tasks[at] != nil {
-					task.after = append(task.after, Tasks[at])
+		if e.after[task.Name] != nil {
+			for _, at := range e.after[task.Name] {
+				if e.Tasks[at] != nil {
+					task.after = append(task.after, e.Tasks[at])
 				}
 			}
 		}
@@ -76,20 +95,20 @@ func Init() {
 		subtasks: subtasks,
 	}
 
-	rootTask.Arguments = Arguments
-	rootTask.Options = mergeOptions(map[string]string{}, Options, rootTask.Options)
+	rootTask.Arguments = e.Arguments
+	rootTask.Options = mergeOptions(map[string]string{}, e.Options, rootTask.Options)
 
 	if err := run(&rootTask); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 	} else {
-		for _, s := range Servers {
-			s.sshClient.Close()
+		for _, s := range e.Servers {
+			_ = s.sshClient.Close()
 		}
 	}
 }
 
 // NewArgument returns a new Argument
-func NewArgument(name string, description string) *Argument {
+func (e *Exec) NewArgument(name string, description string) *Argument {
 	var arg = &Argument{
 		Name:        name,
 		Description: description,
@@ -98,17 +117,17 @@ func NewArgument(name string, description string) *Argument {
 }
 
 // AddArgument adds an Argument to exec
-func AddArgument(argument *Argument) {
-	if _, ok := Arguments[argument.Name]; !ok {
-		argument.sequence = argumentSequence
-		argumentSequence++
-		Arguments[argument.Name] = argument
+func (e *Exec) AddArgument(argument *Argument) {
+	if _, ok := e.Arguments[argument.Name]; !ok {
+		argument.sequence = e.argumentSequence
+		e.argumentSequence++
+		e.Arguments[argument.Name] = argument
 	}
 }
 
 // GetArgument return an Argument pointer
-func GetArgument(name string) *Argument {
-	if arg, ok := Arguments[name]; ok {
+func (e *Exec) GetArgument(name string) *Argument {
+	if arg, ok := e.Arguments[name]; ok {
 		return arg
 	}
 
@@ -116,7 +135,7 @@ func GetArgument(name string) *Argument {
 }
 
 // NewOption returns a new Option
-func NewOption(name string, description string) *Option {
+func (e *Exec) NewOption(name string, description string) *Option {
 	var opt = &Option{
 		Name:        name,
 		Description: description,
@@ -125,15 +144,15 @@ func NewOption(name string, description string) *Option {
 }
 
 // AddOption adds an Option to exec
-func AddOption(option *Option) {
-	if _, ok := Options[option.Name]; !ok {
-		Options[option.Name] = option
+func (e *Exec) AddOption(option *Option) {
+	if _, ok := e.Options[option.Name]; !ok {
+		e.Options[option.Name] = option
 	}
 }
 
 // GetOption return an Option pointer
-func GetOption(name string) *Option {
-	if opt, ok := Options[name]; ok {
+func (e *Exec) GetOption(name string) *Option {
+	if opt, ok := e.Options[name]; ok {
 		return opt
 	}
 
@@ -141,72 +160,73 @@ func GetOption(name string) *Option {
 }
 
 // Set sets a exec Config
-func Set(name string, value interface{}) {
-	Configs[name] = &config{Name: name, value: value}
+func (e *Exec) Set(name string, value interface{}) {
+	e.Configs[name] = &config{Name: name, value: value}
 }
 
 // Get gets a Config value either set in a Server or directly in exec
-func Get(name string) *config {
-	if ServerContext != nil {
-		if c, ok := ServerContext.Configs[name]; ok {
+func (e *Exec) Get(name string) *config {
+	if e.ServerContext != nil {
+		if c, ok := e.ServerContext.Configs[name]; ok {
 			return c
 		}
 	}
-	if c, ok := Configs[name]; ok {
+	if c, ok := e.Configs[name]; ok {
 		return c
 	}
 	return nil
 }
 
 // Has checks if a Config is available
-func Has(name string) bool {
-	if ServerContext != nil {
-		if _, ok := ServerContext.Configs[name]; ok {
+func (e *Exec) Has(name string) bool {
+	if e.ServerContext != nil {
+		if _, ok := e.ServerContext.Configs[name]; ok {
 			return true
 		}
 	}
-	_, ok := Configs[name]
+	_, ok := e.Configs[name]
 	return ok
 }
 
 // Server adds a new Server to exec
 // dsn should be user@host:port
-func Server(name string, dsn string) *server {
-	Servers[name] = &server{
+func (e *Exec) Server(name string, dsn string) *server {
+	e.Servers[name] = &server{
 		Name:      name,
 		Dsn:       dsn,
 		Configs:   make(map[string]*config),
 		sshClient: &sshClient{},
 	}
-	return Servers[name]
+	return e.Servers[name]
 }
 
 // Task inherits the exec Arguments and can override and/or have new Options
 // it accepts a name and a func; the func content is executed on each command execution
-func Task(name string, f func()) *task {
-	Tasks[name] = &task{
+func (e *Exec) Task(name string, f func()) *task {
+	e.Tasks[name] = &task{
 		Name:            name,
 		Arguments:       make(map[string]*Argument),
 		Options:         make(map[string]*Option),
+		exec:            e,
 		removeArguments: make(map[string]string),
 		removeOptions:   make(map[string]string),
 		serverContextF: func() []string {
 			return nil
 		},
 	}
-	Tasks[name].run = func() {
+	e.Tasks[name].run = func() {
 		// set task context
-		TaskContext = Tasks[name]
+		e.TaskContext = e.Tasks[name]
 
-		run, onServers := shouldIRun()
+		run, onServers := e.shouldIRun()
 
 		//skip tasks's server checking if requested
 		if run && len(onServers) > 0 {
-			for _, server := range Servers {
+			for _, server := range e.Servers {
 				for _, onServer := range onServers {
-					if (server.Name == onServer || server.HasRole(onServer)) && Servers[onServer] != nil {
+					if (server.Name == onServer || server.HasRole(onServer)) && e.Servers[onServer] != nil {
 						// set server context
-						ServerContext = server
+						e.ServerContext = server
 
 						color.White("➤ Executing task %s on server %s", color.YellowString(name), color.GreenString(fmt.Sprintf("[%s]", server.Name)))
 
@@ -214,7 +234,7 @@ func Task(name string, f func()) *task {
 						f()
 
 						//reset server context
-						ServerContext = nil
+						e.ServerContext = nil
 					}
 				}
 			}
@@ -225,57 +245,58 @@ func Task(name string, f func()) *task {
 			//execute task's func
 			f()
 		} else {
-			taskNotAllowedToRunPrint(onServers, name)
+			e.taskNotAllowedToRunPrint(onServers, name)
 		}
 
 		//reset task context
-		TaskContext = nil
+		e.TaskContext = nil
 	}
-	return Tasks[name]
+	return e.Tasks[name]
 }
 
 // TaskGroup inherits the exec Arguments and can override and/or have new Options
 // and it will run all associated tasks
-func TaskGroup(name string, tasks ...string) *taskGroup {
-	TaskGroups[name] = &taskGroup{
+func (e *Exec) TaskGroup(name string, tasks ...string) *taskGroup {
+	e.TaskGroups[name] = &taskGroup{
 		Name: name,
 		task: &task{
 			Name:            name,
 			removeArguments: make(map[string]string),
 			removeOptions:   make(map[string]string),
+			exec:            e,
 			run: func() {
 				color.White("➤ Executing task group %s", color.YellowString(name))
 				for _, task := range tasks {
-					if Tasks[task] == nil {
+					if e.Tasks[task] == nil {
 						continue
 					}
 
-					if Tasks[task].once && Tasks[task].executedOnce {
+					if e.Tasks[task].once && e.Tasks[task].executedOnce {
 						continue
 					}
 
 					//set task context
-					TaskContext = Tasks[task]
+					e.TaskContext = e.Tasks[task]
 
-					Tasks[task].run()
+					e.Tasks[task].run()
 
-					if Tasks[task].once && !Tasks[task].executedOnce {
-						Tasks[task].executedOnce = true
+					if e.Tasks[task].once && !e.Tasks[task].executedOnce {
+						e.Tasks[task].executedOnce = true
 					}
 
 					//reset task context
-					TaskContext = nil
+					e.TaskContext = nil
 				}
 			},
 		},
 	}
-	TaskGroups[name].tasks = append(TaskGroups[name].tasks, tasks...)
-	return TaskGroups[name]
+	e.TaskGroups[name].tasks = append(e.TaskGroups[name].tasks, tasks...)
+	return e.TaskGroups[name]
 }
 
 // Local runs a local command and displays/returns the output for further usage, for example in a Task func
-func Local(command string, args ...interface{}) (o output) {
-	command = Parse(fmt.Sprintf(command, args...))
+func (e *Exec) Local(command string, args ...interface{}) (o Output) {
+	command = e.Parse(fmt.Sprintf(command, args...))
 
 	color.Green("[%s] %s %s", "local", ">", color.WhiteString("`%s`", command))
 
@@ -326,7 +347,7 @@ func Local(command string, args ...interface{}) (o output) {
 		}
 	}
 
-	o.text = strings.TrimSpace(string(output))
+	o.text = strings.TrimSpace(output)
 
 	if len(o.text) == 0 {
 		color.Red("[%s] %s\n", "local", "<")
@@ -343,19 +364,87 @@ func Local(command string, args ...interface{}) (o output) {
 }
 
 // Println parses a text template, if founds a {{ var }}, it automatically runs the Get(var) on it
-func Println(text string) {
-	fmt.Println(Parse(text))
+func (e *Exec) Println(text string) {
+	fmt.Println(e.Parse(text))
 }
 
 // OnServers sets the server context dynamically
-func OnServers(f func() []string) {
-	serverContextF = f
+func (e *Exec) OnServers(f func() []string) {
+	e.serverContextF = f
 }
 
-// RemoteRun executes a command on a specific server
-func RemoteRun(command string, server *server) (o output) {
-	ServerContext = server
-	command = Parse(command)
+// Remote runs a command with args, in the ServerContext
+func (e *Exec) Remote(command string, args ...interface{}) (o Output) {
+	run, onServers := e.shouldIRun()
+
+	if !run {
+		e.commandNotAllowedToRunPrint(onServers, fmt.Sprintf(command, args...))
+		return o
+	}
+
+	if e.ServerContext != nil {
+		return e.remoteRun(fmt.Sprintf(command, args...), e.ServerContext)
+	}
+
+	return o
+}
+
+// Upload uploads a file or directory from local to remote, using native scp binary
+func (e *Exec) Upload(local, remote string) {
+	run, onServers := e.shouldIRun()
+
+	if !run {
+		e.commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (local)%s > (remote)%s", local, remote))
+	}
+
+	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r"}
+	if e.ServerContext.key != nil {
+		args = append(args, "-i "+*e.ServerContext.key)
+	}
+	args = append(args, local, e.ServerContext.Dsn+":"+remote)
+
+	e.Local(strings.Join(args, " "))
+}
+
+// Download downloads a file or directory from remote to local, using native scp binary
+func (e *Exec) Download(remote, local string) {
+	run, onServers := e.shouldIRun()
+
+	if !run {
+		e.commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
+	}
+
+	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r"}
+	if e.ServerContext.key != nil {
+		args = append(args, "-i "+*e.ServerContext.key)
+	}
+	args = append(args, e.ServerContext.Dsn+":"+remote, local)
+
+	e.Local(strings.Join(args, " "))
+}
+
+// Before sets tasks to run before task
+func (e *Exec) Before(task string, tasksBefore ...string) {
+	for _, tb := range tasksBefore {
+		if !contains(e.before[task], tb) {
+			e.before[task] = append(e.before[task], tb)
+		}
+	}
+}
+
+// After sets tasks to run after task
+func (e *Exec) After(task string, tasksAfter ...string) {
+	for _, ta := range tasksAfter {
+		if !contains(e.after[task], ta) {
+			e.after[task] = append(e.after[task], ta)
+		}
+	}
+}
+
+// remoteRun executes a command on a specific server
+func (e *Exec) remoteRun(command string, server *server) (o Output) {
+	e.ServerContext = server
+	command = e.Parse(command)
 
 	color.Green("[%s] %s %s", server.Name, ">", color.WhiteString("`%s`", command))
 
@@ -416,104 +505,36 @@ func RemoteRun(command string, server *server) (o output) {
 	return o
 }
 
-// Remote runs a command with args, in the ServerContext
-func Remote(command string, args ...interface{}) (o output) {
-	run, onServers := shouldIRun()
-
-	if !run {
-		commandNotAllowedToRunPrint(onServers, fmt.Sprintf(command, args...))
-		return o
-	}
-
-	if ServerContext != nil {
-		return RemoteRun(fmt.Sprintf(command, args...), ServerContext)
-	}
-
-	return o
-}
-
-// Upload uploads a file or directory from local to remote, using native scp binary
-func Upload(local, remote string) {
-	run, onServers := shouldIRun()
-
-	if !run {
-		commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (local)%s > (remote)%s", local, remote))
-	}
-
-	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r"}
-	if ServerContext.key != nil {
-		args = append(args, "-i "+*ServerContext.key)
-	}
-	args = append(args, local, ServerContext.Dsn+":"+remote)
-
-	Local(strings.Join(args, " "))
-}
-
-// Download downloads a file or directory from remote to local, using native scp binary
-func Download(remote, local string) {
-	run, onServers := shouldIRun()
-
-	if !run {
-		commandNotAllowedToRunPrint(onServers, fmt.Sprintf("scp (remote)%s > (local)%s", local, remote))
-	}
-
-	var args = []string{"scp", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r"}
-	if ServerContext.key != nil {
-		args = append(args, "-i "+*ServerContext.key)
-	}
-	args = append(args, ServerContext.Dsn+":"+remote, local)
-
-	Local(strings.Join(args, " "))
-}
-
-// Before sets tasks to run before task
-func Before(task string, tasksBefore ...string) {
-	for _, tb := range tasksBefore {
-		if !contains(before[task], tb) {
-			before[task] = append(before[task], tb)
-		}
-	}
-}
-
-// After sets tasks to run after task
-func After(task string, tasksAfter ...string) {
-	for _, ta := range tasksAfter {
-		if !contains(after[task], ta) {
-			after[task] = append(after[task], ta)
-		}
-	}
-}
-
-func shouldIRun() (run bool, onServers []string) {
+func (e *Exec) shouldIRun() (run bool, onServers []string) {
 	run = true
 
 	//default values if serverContextF is set
-	if s := serverContextF(); len(s) > 0 {
+	if s := e.serverContextF(); len(s) > 0 {
 		onServers = s
 	}
 
 	//inside a task
-	if TaskContext != nil {
+	if e.TaskContext != nil {
 		//task has a serverContextF
-		if s := TaskContext.serverContextF(); len(s) > 0 {
+		if s := e.TaskContext.serverContextF(); len(s) > 0 {
 			onServers = s
 		}
 
 		//task needs to run only on some servers
-		if len(TaskContext.onlyOnServers) > 0 {
+		if len(e.TaskContext.onlyOnServers) > 0 {
 			run = false
 			for _, oS := range onServers {
-				for _, oOS := range TaskContext.onlyOnServers {
+				for _, oOS := range e.TaskContext.onlyOnServers {
 					//task on server matches only on servers
 					if oS == oOS {
 						run = true
 					}
 				}
 			}
-			onServers = TaskContext.onlyOnServers
+			onServers = e.TaskContext.onlyOnServers
 		}
 
-		if TaskContext.once && TaskContext.executedOnce {
+		if e.TaskContext.once && e.TaskContext.executedOnce {
 			run = false
 		}
 	}
@@ -521,24 +542,24 @@ func shouldIRun() (run bool, onServers []string) {
 	return run, onServers
 }
 
-func commandNotAllowedToRunPrint(onServers []string, command string) {
+func (e *Exec) commandNotAllowedToRunPrint(onServers []string, command string) {
 	fmt.Printf("%s%s%s\n", color.CyanString("[local] > Command `"), color.WhiteString(command), color.CyanString("` can run only on %s", onServers))
 }
 
-func taskNotAllowedToRunPrint(onServers []string, task string) {
+func (e *Exec) taskNotAllowedToRunPrint(onServers []string, task string) {
 	fmt.Printf("%s%s%s\n", color.CyanString("[local] > Task `"), color.WhiteString(task), color.CyanString("` can run only on %s", onServers))
 }
 
 // onStart task setup
-func onStart() {
-	if task, ok := Tasks["onStart"]; ok {
+func (e *Exec) onStart() {
+	if task, ok := e.Tasks["onStart"]; ok {
 		task.run()
 	}
 }
 
 // onEnd task setup
-func onEnd() {
-	if task, ok := Tasks["onEnd"]; ok {
+func (e *Exec) onEnd() {
+	if task, ok := e.Tasks["onEnd"]; ok {
 		task.run()
 	}
 }

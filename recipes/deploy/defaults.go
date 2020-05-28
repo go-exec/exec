@@ -2,7 +2,7 @@ package deploy
 
 import (
 	"fmt"
-	"github.com/go-exec/exec"
+	e "github.com/go-exec/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,6 +10,7 @@ import (
 )
 
 func init() {
+	exec := e.Instance
 	exec.Set("keep_releases", 5)
 
 	exec.Set("repository", "") // Repository to deploy.
@@ -67,15 +68,15 @@ func init() {
 	})
 
 	branch := exec.NewOption("branch", "Branch to deploy")
-	branch.Type = exec.String
+	branch.Type = e.String
 	exec.AddOption(branch)
 
 	tag := exec.NewOption("tag", "Tag to deploy")
-	tag.Type = exec.String
+	tag.Type = e.String
 	exec.AddOption(tag)
 
 	revision := exec.NewOption("revision", "Revision to deploy")
-	revision.Type = exec.String
+	revision.Type = e.String
 	exec.AddOption(revision)
 
 	exec.Task("current", func() {
@@ -101,7 +102,7 @@ func init() {
 	}).Once().Private()
 
 	exec.Task("onEnd", func() {
-		exec.Println(fmt.Sprintf("Finished in %s!", time.Now().Sub(exec.Get("startTime").Time()).String()))
+		exec.Println(fmt.Sprintf("Finished in %s!", time.Since(exec.Get("startTime").Time()).String()))
 		exec.Println("End")
 	}).Once().Private()
 }
