@@ -224,21 +224,22 @@ func TestArgument_String(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			test: "valid with value string type pointer",
+			test: "invalid with value string type pointer",
 			arg: &Argument{
 				Name:  "argument",
 				Type:  String,
 				Value: new(string),
 			},
+			expectedPanic: true,
 		},
 		{
-			test: "invalid value string type with no pointer",
+			test: "valid value string type with no pointer",
 			arg: &Argument{
 				Name:  "argument",
 				Type:  String,
 				Value: "string",
 			},
-			expectedPanic: true,
+			expectedPanic: false,
 		},
 		{
 			test: "invalid value int type with no pointer",
@@ -258,7 +259,7 @@ func TestArgument_String(t *testing.T) {
 					_ = testCase.arg.String()
 				})
 			} else {
-				require.Equal(t, *testCase.arg.Value.(*string), testCase.arg.String())
+				require.Equal(t, testCase.arg.Value.(string), testCase.arg.String())
 			}
 		})
 	}
@@ -273,21 +274,22 @@ func TestArgument_Int(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			test: "valid with value int type pointer",
+			test: "invalid with value int type pointer",
 			arg: &Argument{
 				Name:  "argument",
 				Type:  Int,
 				Value: new(int),
 			},
+			expectedPanic: true,
 		},
 		{
-			test: "invalid value int type with no pointer",
+			test: "valid value int type with no pointer",
 			arg: &Argument{
 				Name:  "argument",
 				Type:  Int,
 				Value: 0,
 			},
-			expectedPanic: true,
+			expectedPanic: false,
 		},
 		{
 			test: "invalid value string type with no pointer",
@@ -307,7 +309,7 @@ func TestArgument_Int(t *testing.T) {
 					testCase.arg.Int()
 				})
 			} else {
-				require.Equal(t, *testCase.arg.Value.(*int), testCase.arg.Int())
+				require.Equal(t, testCase.arg.Value.(int), testCase.arg.Int())
 			}
 		})
 	}
@@ -322,21 +324,22 @@ func TestArgument_Bool(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			test: "valid with value bool type pointer",
+			test: "invalid with value bool type pointer",
 			arg: &Argument{
 				Name:  "argument",
 				Type:  Bool,
 				Value: new(bool),
 			},
+			expectedPanic: true,
 		},
 		{
-			test: "invalid value bool type with no pointer",
+			test: "valid value bool type with no pointer",
 			arg: &Argument{
 				Name:  "argument",
 				Type:  Bool,
 				Value: false,
 			},
-			expectedPanic: true,
+			expectedPanic: false,
 		},
 		{
 			test: "invalid value string type with no pointer",
@@ -356,7 +359,7 @@ func TestArgument_Bool(t *testing.T) {
 					testCase.arg.Bool()
 				})
 			} else {
-				require.Equal(t, *testCase.arg.Value.(*bool), testCase.arg.Bool())
+				require.Equal(t, testCase.arg.Value.(bool), testCase.arg.Bool())
 			}
 		})
 	}
