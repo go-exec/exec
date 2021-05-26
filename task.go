@@ -18,6 +18,7 @@ type task struct {
 	Name      string
 	Options   map[string]*Option
 	Arguments map[string]*Argument
+	Dir       string
 
 	exec             *Exec
 	run              taskFunction

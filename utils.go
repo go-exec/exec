@@ -17,9 +17,15 @@ import (
 
 // Cd is a remote helper function that runs a `cd` before a command
 func (e *Exec) Cd(path string) {
-	command := "cd " + e.Parse(path)
-	color.Green("[%s] %s %s", e.ServerContext.Name, color.GreenString(">"), command)
-	e.ServerContext.sshClient.env = command + "; "
+	dir := e.Parse(path)
+	if e.TaskContext != nil {
+		e.TaskContext.Dir = dir
+	}
+	if e.ServerContext != nil {
+		command := "cd " + dir
+		color.Green("[%s] %s %s", e.ServerContext.Name, color.GreenString(">"), command)
+		e.ServerContext.sshClient.env = command + "; "
+	}
 }
 
 // CommandExist checks if a remote command exists on server

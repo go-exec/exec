@@ -301,6 +301,9 @@ func (e *Exec) Local(command string, args ...interface{}) (o Output) {
 	color.Green("[%s] %s %s", "local", ">", color.WhiteString("`%s`", command))
 
 	cmd := exec.Command("/bin/sh", "-c", command)
+	if e.TaskContext != nil && e.TaskContext.Dir != "" {
+		cmd.Dir = e.TaskContext.Dir
+	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
