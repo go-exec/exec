@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/go-exec/exec"
-	_ "github.com/go-exec/exec/recipes/symfony"
+	_ "github.com/go-exec/exec/examples/recipes/symfony"
 )
 
 /*

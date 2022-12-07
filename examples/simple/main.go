@@ -181,7 +181,7 @@ func main() {
 
 	exec.
 		Task("onservers:a", func() {
-			exec.RunIfNoBinary("docker", []string{
+			exec.RemoteRunIfNoBinary("docker", []string{
 				"echo 'a'",
 				"echo 'b'",
 			})
@@ -192,7 +192,7 @@ func main() {
 
 	exec.
 		Task("onservers:b", func() {
-			exec.RunIfNoBinary("wget", []string{
+			exec.RemoteRunIfNoBinary("wget", []string{
 				"echo 'a'",
 				"echo 'b'",
 			})
@@ -203,7 +203,7 @@ func main() {
 
 	exec.
 		Task("onservers:c", func() {
-			exec.RunIfNoBinary("docker", []string{
+			exec.RemoteRunIfNoBinary("docker", []string{
 				"echo 'a'",
 				"echo 'b'",
 			})

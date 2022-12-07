@@ -48,29 +48,55 @@ func (e *Exec) Parse(text string) string {
 	})
 }
 
-// RunIfNoBinary runs a remote command if a binary is not found
+// RemoteRunIfNoBinary runs a remote command if a binary is not found
 // command can be an array of string commands or one a string command
-func (e *Exec) RunIfNoBinary(binary string, command interface{}) (o Output) {
+func (e *Exec) RemoteRunIfNoBinary(binary string, command interface{}) (o Output) {
 	return e.Remote("if [ ! -e \"`which %s`\" ]; then %s; fi", binary, commandToString(command))
 }
 
-// RunIfNoBinaries runs multiple RunIfNoBinary
-func (e *Exec) RunIfNoBinaries(config map[string]interface{}) {
+// LocalRunIfNoBinary runs a local command if a binary is not found
+// command can be an array of string commands or one a string command
+func (e *Exec) LocalRunIfNoBinary(binary string, command interface{}) (o Output) {
+	return e.Local("if [ ! -e \"`which %s`\" ]; then %s; fi", binary, commandToString(command))
+}
+
+// RemoteRunIfNoBinaries runs multiple RemoteRunIfNoBinary
+func (e *Exec) RemoteRunIfNoBinaries(config map[string]interface{}) {
 	for binary, command := range config {
-		e.RunIfNoBinary(binary, command)
+		e.RemoteRunIfNoBinary(binary, command)
 	}
 }
 
-// RunIf runs a remote command if condition is true
+// LocalRunIfNoBinaries runs multiple LocalRunIfNoBinary
+func (e *Exec) LocalRunIfNoBinaries(config map[string]interface{}) {
+	for binary, command := range config {
+		e.LocalRunIfNoBinary(binary, command)
+	}
+}
+
+// RemoteRunIf runs a remote command if condition is true
 // command can be an array of string commands or one a string command
-func (e *Exec) RunIf(condition string, command interface{}) (o Output) {
+func (e *Exec) RemoteRunIf(condition string, command interface{}) (o Output) {
 	return e.Remote("if %s; then %s; fi", condition, commandToString(command))
 }
 
-// RunIfs runs multiple RunIf
-func (e *Exec) RunIfs(config map[string]interface{}) {
+// LocalRunIf runs a local command if condition is true
+// command can be an array of string commands or one a string command
+func (e *Exec) LocalRunIf(condition string, command interface{}) (o Output) {
+	return e.Local("if %s; then %s; fi", condition, commandToString(command))
+}
+
+// RemoteRunIfs runs multiple RemoteRunIf
+func (e *Exec) RemoteRunIfs(config map[string]interface{}) {
 	for condition, command := range config {
-		e.RunIf(condition, command)
+		e.RemoteRunIf(condition, command)
+	}
+}
+
+// LocalRunIfs runs multiple LocalRunIf
+func (e *Exec) LocalRunIfs(config map[string]interface{}) {
+	for condition, command := range config {
+		e.LocalRunIf(condition, command)
 	}
 }
 
